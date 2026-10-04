@@ -1,0 +1,161 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "TingxuanHan/MoonPrivacyKit"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub const GATE_SIZE : Int = 16_777_216
+
+pub fn aggregate_responses(Survey, String, Array[ProtectedResponse]) -> SurveyReport raise KitError
+
+pub fn dispatch(String) -> String
+
+pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
+
+pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
+
+pub fn inspect_fields(String, String) -> Array[String] raise KitError
+
+pub fn make_mechanism(Int, Double) -> Mechanism raise KitError
+
+pub fn parse_csv(String) -> CsvTable raise KitError
+
+pub fn parse_response(String) -> ProtectedResponse raise KitError
+
+pub fn parse_survey(String) -> Survey raise KitError
+
+pub fn plan_survey(Array[Mechanism], Int, collections? : Int, alpha? : Double) -> PrivacyPlan raise KitError
+
+pub fn protect_response(Survey, String, String, Array[Int], Array[Int], Array[Int]) -> ProtectedResponse raise KitError
+
+pub fn randomize(Mechanism, Int, Int, Int) -> Int raise KitError
+
+pub fn redact_csv(String, FieldPolicy, spreadsheet_safe? : Bool) -> RedactionResult raise KitError
+
+pub fn redact_json(String, FieldPolicy) -> RedactionResult raise KitError
+
+pub fn required_samples(Mechanism, Double, alpha? : Double) -> Int? raise KitError
+
+pub fn validate_survey(Survey) -> Array[Mechanism] raise KitError
+
+// Errors
+pub suberror KitError {
+  KitError(String)
+}
+
+// Types and methods
+pub struct CategoryEstimate {
+  category : Int
+  reported_count : Int
+  raw_proportion : Double
+  display_proportion : Double
+  lower : Double
+  upper : Double
+} derive(ToJson)
+pub fn CategoryEstimate::to_json(Self) -> Json
+
+pub struct CsvTable {
+  headers : Array[String]
+  rows : Array[Array[String]]
+} derive(ToJson)
+pub fn CsvTable::to_json(Self) -> Json
+
+pub struct Estimate {
+  samples : Int
+  confidence : Double
+  simultaneous_radius : Double
+  informative : Bool
+  categories : Array[CategoryEstimate]
+} derive(ToJson)
+pub fn Estimate::to_json(Self) -> Json
+
+pub(all) struct FieldPolicy {
+  remove : Array[String]
+  mask : Array[String]
+} derive(ToJson, @json.FromJson)
+pub fn FieldPolicy::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn FieldPolicy::to_json(Self) -> Json
+
+pub struct Mechanism {
+  categories : Int
+  threshold : Int
+  requested_epsilon : Double
+  effective_epsilon : Double
+  truthful_probability : Double
+  other_probability : Double
+} derive(ToJson)
+pub fn Mechanism::to_json(Self) -> Json
+
+pub struct PrivacyPlan {
+  questions : Int
+  collections : Int
+  total_epsilon : Double
+  sample_count : Int
+  per_question_radius : Array[Double]
+} derive(ToJson)
+pub fn PrivacyPlan::to_json(Self) -> Json
+
+pub struct ProtectedResponse {
+  schema_version : Int
+  mechanism : String
+  survey_fingerprint : String
+  response_id : String
+  answers : Array[Int]
+} derive(ToJson, @json.FromJson)
+pub fn ProtectedResponse::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn ProtectedResponse::to_json(Self) -> Json
+
+pub(all) struct Question {
+  id : String
+  title : String
+  options : Array[String]
+  epsilon : Double
+} derive(ToJson, @json.FromJson)
+pub fn Question::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Question::to_json(Self) -> Json
+
+pub struct QuestionResult {
+  id : String
+  title : String
+  options : Array[String]
+  statistics : Estimate
+} derive(ToJson)
+pub fn QuestionResult::to_json(Self) -> Json
+
+pub struct RedactionAudit {
+  records : Int
+  removed_values : Int
+  masked_values : Int
+  spreadsheet_escapes : Int
+} derive(ToJson)
+pub fn RedactionAudit::to_json(Self) -> Json
+
+pub struct RedactionResult {
+  output : String
+  audit : RedactionAudit
+} derive(ToJson)
+pub fn RedactionResult::to_json(Self) -> Json
+
+pub(all) struct Survey {
+  schema_version : Int
+  id : String
+  title : String
+  questions : Array[Question]
+} derive(ToJson, @json.FromJson)
+pub fn Survey::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Survey::to_json(Self) -> Json
+
+pub struct SurveyReport {
+  survey_id : String
+  accepted : Int
+  duplicates : Int
+  questionnaire_confidence : Double
+  questions : Array[QuestionResult]
+} derive(ToJson)
+pub fn SurveyReport::to_json(Self) -> Json
+
+// Type aliases
+
+// Traits

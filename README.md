@@ -1,28 +1,78 @@
 # MoonPrivacyKit · 隐私工具箱
 
-为问卷收集、文件分享和群体统计提供可组合的隐私保护工具。
+[![Verify](https://github.com/TingxuanHan/MoonPrivacyKit/actions/workflows/ci.yml/badge.svg)](https://github.com/TingxuanHan/MoonPrivacyKit/actions/workflows/ci.yml)
 
-项目采用 MoonBit 核心库与本地工作台的结构。核心关注有限选项的随机响应、统计估计、问卷保护方案及显式字段脱敏，网页和命令行负责输入输出。
+用 MoonBit 构建的隐私工具库与中文本地工作台，帮助使用者收集群体意见、处理待分享文件，并理解保护强度对数据可用性的影响。
 
-## 使用场景
+![效果评估工作台](docs/images/workbench.png)
 
-- **意见调查：**参与者在本地处理敏感选择题，组织者汇总经过随机化的回答，查看总体比例和误差范围。
-- **资料分享：**数据持有者选择需要删除或遮盖的字段，在本地预览并导出处理结果。
-- **调研设计：**发起者比较题目数量、样本量与保护配置，判断统计精度是否满足用途。
+## 现在可以做什么
 
-## 开发状态
+| 任务 | 首版已实现 |
+| --- | --- |
+| 隐私问卷 | 创建有限选项问卷、本地保护回答、导出响应文件、配置指纹校验、重复文件去重、汇总比例与误差范围 |
+| 文件脱敏 | CSV／JSON 显式字段删除与遮盖、预览、导出、只含数量的处理记录、CSV 公式文本化选项 |
+| 效果评估 | 比较选项数、人数、题目数量、每题 ε 与采集次数；估计误差、所需人数和累计隐私开销 |
+| 开发集成 | MoonBit 类型化接口、JSON 调用接口、Web Crypto 安全随机适配器、命令行、模拟与持续集成 |
 
-项目处于初始开发阶段。当前能力、运行方法与验证结果随各功能实现更新。后续计划见 [ROADMAP.md](docs/ROADMAP.md)，信任边界见 [PRIVACY_MODEL.md](docs/PRIVACY_MODEL.md)。
+这是 **v0.1 本地原型**。首期通过文件交换收集回答；在线问卷托管、身份与网络元数据隔离、全局重复参与限制、自动敏感信息识别均未实现。
 
-## 构建
+## 快速运行
 
-安装 [MoonBit 官方工具链](https://www.moonbitlang.com/download) 后运行：
+准备 [MoonBit 稳定版工具链](https://www.moonbitlang.com/download) 和 Node.js 22 或以上版本，确保 `moon`、`node` 在 PATH 中。应用没有第三方 JavaScript 运行时依赖。
 
 ```sh
-moon check
-moon test
+npm run build
+npm start
 ```
 
-## 来源与许可证
+浏览器打开 **http://127.0.0.1:4173**。Windows 也可以双击仓库内的 `start.cmd`，它会构建并打开工作台。关闭启动终端可停止服务。
 
-本项目使用 Apache-2.0。随机响应采用公开的统计方法；不宣称发明新的差分隐私定义或机制。参考资料和相邻项目见 [REFERENCES.md](docs/REFERENCES.md)。
+处理发生在当前浏览器内，不向服务器提交问卷或数据文件；本地服务只提供固定的程序资源。页面没有第三方统计脚本，不使用浏览器持久化存储。刷新后需要重新导入，已下载的文件保存在使用者选择的位置。
+
+## 三个完整示例
+
+- **团队意见调查：**在“隐私问卷 → 创建问卷”载入示例并导出；参与者进入“填写问卷”载入配置、填写并下载受保护回答；组织者在“汇总结果”选择原问卷及回答文件，查看群体估计与误差。
+- **分享表格：**在“文件脱敏”导入 CSV／JSON，选择要删除或遮盖的字段，检查预览后下载结果和处理记录。原文件不被覆盖。
+- **设计调查：**在“效果评估”输入预计人数、题目数量、保护参数和目标误差，查看当前精度及建议人数，导出方案用于后续调整。
+
+命令行对应流程见 [使用说明](docs/GETTING_STARTED.md)，可直接使用 `examples/` 中的虚构数据。
+
+## 开发与验证
+
+```sh
+# 编译检查、Wasm 与 JavaScript 目标测试、命令行与统计测试
+npm run verify
+
+# 安装浏览器测试依赖并验证完整界面流程
+npm ci --ignore-scripts
+npx playwright install chromium
+npm run test:ui
+
+# 可复现的虚构数据评估；先创建 reports 目录，输出文件必须不存在
+node scripts/evaluate.mjs reports/evaluation.json
+```
+
+本地验证记录及限制见 [VALIDATION.md](docs/VALIDATION.md)。GitHub Actions 在推送与拉取请求时运行核心、文件操作和浏览器测试。开发时每完成一个可验证的功能节点再提交，修复也保留独立记录。
+
+## 实现结构
+
+- 根目录 `.mbt`：随机响应、比例估计、方案评估、问卷模型、CSV／JSON 脱敏与输入校验。
+- `bridge/`：导出 MoonBit JSON 接口，编译成 `dist/core.js`。
+- `runtime/`：安全随机数、配置指纹与宿主适配。
+- `web/`、`cli/`：中文工作台与文件操作入口。
+- `tests/`、`scripts/`：端到端测试、构建、评估与本地服务。
+
+MoonBit 核心可面向 Wasm 和 JavaScript 编译；当前工作台运行的是 **MoonBit 编译得到的 JavaScript**。尚未提供浏览器 Wasm 加载器。
+
+## 保护范围
+
+随机响应保护已声明选项中的回答内容，不隐藏参与事实、文件传送身份、IP 或设备信息。它依赖可信客户端与安全随机源；重复生成回答会产生额外隐私开销，重试应复用同一文件。小样本不一定能产生有用的统计结论。
+
+脱敏由使用者明确选字段。未选中的字段和字段之间的关联仍可能泄露信息，不承诺完全匿名。详细说明见 [隐私模型](docs/PRIVACY_MODEL.md) 与 [机制及误差分析](docs/MECHANISM.md)。
+
+## 路线与来源
+
+项目长期目标是通用、可组合的隐私工具库，后续扩展问卷服务、应用统计 SDK 和更多数据源。首月三个目标及后续安排见 [开发路线](docs/ROADMAP.md)，项目申报正文见 [APPLICATION.md](docs/APPLICATION.md)。
+
+采用 Apache-2.0。随机响应使用公开统计方法，核心实现独立编写，不宣称发明新的隐私算法，也不把整个 MoonBit 隐私领域视为生态空白。[参考资料与相邻项目](docs/REFERENCES.md) 说明了项目范围与许可来源。
