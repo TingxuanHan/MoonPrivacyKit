@@ -1,0 +1,9 @@
+import {
+  "TingxuanHan/MoonPrivacyKit" @kit,
+}
+
+pkgtype(kind: "executable")
+
+options(
+  link: { "js": { "exports": [ "dispatch" ], "format": "esm" } },
+)

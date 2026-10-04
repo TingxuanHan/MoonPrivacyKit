@@ -1,0 +1,119 @@
+///|
+fn field(value : Json, key : String) -> Json raise KitError {
+  match value {
+    Object(fields) =>
+      match fields.get(key) {
+        Some(v) => v
+        None => raise KitError("required request field is missing")
+      }
+    _ => raise KitError("request must be an object")
+  }
+}
+
+///|
+fn[T : @json.FromJson] decode(value : Json) -> T raise KitError {
+  @json.from_json(value) catch {
+    _ => raise KitError("invalid request field type")
+  }
+}
+
+///|
+fn decode_int(value : Json) -> Int raise KitError {
+  match value {
+    Number(n, ..) if finite(n) &&
+      n >= -2147483648.0 &&
+      n <= 2147483647.0 &&
+      @math.floor(n) == n => n.to_int()
+    _ => raise KitError("expected an integer in the supported range")
+  }
+}
+
+///|
+fn decode_ints(value : Json) -> Array[Int] raise KitError {
+  match value {
+    Array(values) => values.map(v => decode_int(v))
+    _ => raise KitError("expected an array of integers")
+  }
+}
+
+///|
+fn execute_request(request : Json) -> Json raise KitError {
+  let op : String = decode(field(request, "op"))
+  match op {
+    "mechanism" =>
+      make_mechanism(
+        decode_int(field(request, "categories")),
+        decode(field(request, "epsilon")),
+      ).to_json()
+    "estimate" => {
+      let m = make_mechanism(
+        decode_int(field(request, "categories")),
+        decode(field(request, "epsilon")),
+      )
+      estimate(m, decode_ints(field(request, "counts"))).to_json()
+    }
+    "plan" => {
+      let m = make_mechanism(
+        decode_int(field(request, "categories")),
+        decode(field(request, "epsilon")),
+      )
+      let questions : Int = decode_int(field(request, "questions"))
+      if questions < 1 || questions > 100 {
+        raise KitError("question count must be between 1 and 100")
+      }
+      let plan = plan_survey(
+        Array::make(questions, m),
+        decode_int(field(request, "samples")),
+        collections=decode_int(field(request, "collections")),
+      )
+      let needed = required_samples(
+        m,
+        decode(field(request, "radius")),
+        alpha=0.05 / questions.to_double(),
+      )
+      {
+        "plan": plan.to_json(),
+        "required_samples": needed.to_json(),
+        "mechanism": m.to_json(),
+      }
+    }
+    "validateSurvey" =>
+      parse_survey(field(request, "survey").stringify()).to_json()
+    "protect" => {
+      let survey = parse_survey(field(request, "survey").stringify())
+      protect_response(
+        survey,
+        decode(field(request, "fingerprint")),
+        decode(field(request, "response_id")),
+        decode_ints(field(request, "answers")),
+        decode_ints(field(request, "gates")),
+        decode_ints(field(request, "fallbacks")),
+      ).to_json()
+    }
+    "aggregate" => {
+      let survey = parse_survey(field(request, "survey").stringify())
+      let values : Array[Json] = decode(field(request, "responses"))
+      let responses = values.map(v => parse_response(v.stringify()))
+      aggregate_responses(
+        survey,
+        decode(field(request, "fingerprint")),
+        responses,
+      ).to_json()
+    }
+    _ => raise KitError("unknown operation")
+  }
+}
+
+///|
+/// JSON boundary for host applications. Error messages never echo input values.
+pub fn dispatch(input : String) -> String {
+  let result : Json = try {
+    if input.length() > 10_000_000 {
+      raise KitError("request exceeds the 10 MB text limit")
+    }
+    { "ok": true, "data": execute_request(read_json(input)) }
+  } catch {
+    KitError(message) => { "ok": false, "error": message }
+  }
+  result.stringify()
+}

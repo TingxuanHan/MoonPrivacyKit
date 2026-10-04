@@ -113,6 +113,7 @@ fn require_keys(value : Json, keys : Array[String]) -> Unit raise KitError {
 pub fn parse_survey(input : String) -> Survey raise KitError {
   let value = read_json(input)
   require_keys(value, ["schema_version", "id", "title", "questions"])
+  ignore(decode_int(field(value, "schema_version")))
   match value {
     { "questions": Array(questions), .. } =>
       for question in questions {
@@ -130,6 +131,8 @@ pub fn parse_survey(input : String) -> Survey raise KitError {
 ///|
 pub fn parse_response(input : String) -> ProtectedResponse raise KitError {
   let value = read_json(input)
+  ignore(decode_int(field(value, "schema_version")))
+  ignore(decode_ints(field(value, "answers")))
   require_keys(value, [
     "schema_version", "mechanism", "survey_fingerprint", "response_id", "answers",
   ])
