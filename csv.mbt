@@ -69,6 +69,9 @@ pub fn parse_csv(input : String) -> CsvTable raise KitError {
   if records.is_empty() {
     raise KitError("CSV header is missing")
   }
+  if records.length() > 100001 {
+    raise KitError("CSV exceeds the record limit")
+  }
   let headers = records[0]
   if headers.length() > 512 {
     raise KitError("CSV exceeds the column limit")

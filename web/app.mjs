@@ -38,6 +38,7 @@ function humanError(error) {
   if (/category count/.test(msg)) return '每道题需要 2 至 256 个选项。';
   if (/epsilon/.test(msg)) return '每题 ε 必须在 0 至 8 之间，请检查保护参数。';
   if (/file size/.test(msg)) return '文件超过首版的 4 MB 上限，请先缩小文件。';
+  if (/collection size/.test(msg)) return '一次最多汇总 10,000 份文件，总大小不超过 8 MB，请减少本次选择的文件。';
   if (/JSON|schema|field type|fields do not match/.test(msg) || error instanceof SyntaxError) return '文件内容或格式不符合要求，请检查是否选择了正确的 JSON 文件。';
   if (/title/.test(msg)) return '请填写有效标题，并缩短过长的内容。';
   if (/secure context/.test(msg)) return '当前环境无法使用安全随机数，请通过本机地址或 HTTPS 打开页面。';
@@ -140,7 +141,7 @@ $('#collect-form').addEventListener('submit', event => { event.preventDefault();
   $('#collect-result').hidden = true;
   const ticket = collectGeneration;
   const files = [...$('#collect-files').files];
-  if (files.length > 10000 || files.reduce((sum, f) => sum + f.size, 0) > 8_000_000) throw new Error('file size');
+  if (files.length > 10000 || files.reduce((sum, f) => sum + f.size, 0) > 8_000_000) throw new Error('collection size');
   const survey = validateSurvey(await fileJson($('#collect-survey').files[0]));
   const responses = await Promise.all(files.map(fileJson));
   const report = await aggregateResponses(survey, responses);

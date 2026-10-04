@@ -25,11 +25,18 @@ fn json_records(
 }
 
 ///|
-fn record_fields(rows : Array[Map[String, Json]]) -> Array[String] {
+fn record_fields(
+  rows : Array[Map[String, Json]],
+) -> Array[String] raise KitError {
   let fields : Array[String] = []
+  let seen : Map[String, Bool] = Map([])
   for row in rows {
     for key, _ in row {
-      if !fields.contains(key) {
+      if !seen.contains(key) {
+        if fields.length() >= 512 {
+          raise KitError("JSON exceeds the 512-field limit")
+        }
+        seen[key] = true
         fields.push(key)
       }
     }

@@ -61,7 +61,11 @@ async function main() {
         }
       } finally { terminal.close(); }
     } else {
-      try { answers = JSON.parse(readFileSync(0, 'utf8')); }
+      try {
+        const input = readFileSync(0, 'utf8');
+        if (input.length > 10000) throw new Error('Answer input is too long.');
+        answers = JSON.parse(input);
+      }
       catch { throw new Error('Standard input must contain a JSON array of option indices.'); }
     }
     const response = await protectResponse(survey, answers);

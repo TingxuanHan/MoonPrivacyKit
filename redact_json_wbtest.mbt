@@ -36,3 +36,23 @@ test "JSON field inspection exposes names and rejects scalar records" {
     assert_true(rejected)
   }
 }
+
+///|
+test "JSON field discovery bounds distinct fields across heterogeneous records" {
+  let fields : Map[String, Json] = Map([])
+  for i = 0; i < 512; i = i + 1 {
+    fields["field\{i}"] = Json::null()
+  }
+  assert_eq(
+    inspect_fields("json", Json::object(fields).stringify()).length(),
+    512,
+  )
+  fields["one_more"] = Json::null()
+  let rejected = try {
+    ignore(inspect_fields("json", Json::object(fields).stringify()))
+    false
+  } catch {
+    _ => true
+  }
+  assert_true(rejected)
+}
