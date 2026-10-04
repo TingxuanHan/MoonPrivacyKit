@@ -100,6 +100,26 @@ fn execute_request(request : Json) -> Json raise KitError {
         responses,
       ).to_json()
     }
+    "inspect" =>
+      inspect_fields(
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      ).to_json()
+    "redact" => {
+      let format : String = decode(field(request, "format"))
+      let input : String = decode(field(request, "input"))
+      let policy : FieldPolicy = decode(field(request, "policy"))
+      match format {
+        "csv" =>
+          redact_csv(
+            input,
+            policy,
+            spreadsheet_safe=decode(field(request, "spreadsheet_safe")),
+          ).to_json()
+        "json" => redact_json(input, policy).to_json()
+        _ => raise KitError("supported file formats are csv and json")
+      }
+    }
     _ => raise KitError("unknown operation")
   }
 }
