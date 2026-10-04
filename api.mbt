@@ -52,6 +52,27 @@ fn execute_request(request : Json) -> Json raise KitError {
       )
       estimate(m, decode_ints(field(request, "counts"))).to_json()
     }
+    "randomizeBatch" => {
+      let m = make_mechanism(
+        decode_int(field(request, "categories")),
+        decode(field(request, "epsilon")),
+      )
+      let answers = decode_ints(field(request, "answers"))
+      let gates = decode_ints(field(request, "gates"))
+      let fallbacks = decode_ints(field(request, "fallbacks"))
+      if answers.length() > 100000 ||
+        answers.length() != gates.length() ||
+        answers.length() != fallbacks.length() {
+        raise KitError(
+          "batch dimensions must match and contain at most 100000 items",
+        )
+      }
+      let result : Array[Int] = []
+      for i = 0; i < answers.length(); i = i + 1 {
+        result.push(randomize(m, answers[i], gates[i], fallbacks[i]))
+      }
+      result.to_json()
+    }
     "plan" => {
       let m = make_mechanism(
         decode_int(field(request, "categories")),
