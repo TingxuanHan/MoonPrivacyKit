@@ -1,0 +1,8 @@
+{
+  "categories": 3,
+  "epsilon": 1,
+  "questions": 2,
+  "collections": 1,
+  "samples": 1000,
+  "radius": 0.05
+}

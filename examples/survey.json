@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "team-feedback-v1",
+  "title": "团队反馈示例",
+  "questions": [
+    { "id": "satisfaction", "title": "你对目前的协作方式满意吗？", "options": ["满意", "不满意"], "epsilon": 1 },
+    { "id": "priority", "title": "你最希望优先改善什么？", "options": ["沟通", "工具", "安排"], "epsilon": 1 }
+  ]
+}
