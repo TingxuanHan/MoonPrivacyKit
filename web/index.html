@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>MoonPrivacyKit · 隐私工具箱</title>
+  <link rel="stylesheet" href="/web/style.css">
+  <script type="module" src="/web/app.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">跳到工作区</a>
+  <header class="topbar"><div class="brand"><span class="mark" aria-hidden="true">M</span><div>MoonPrivacyKit<span class="brand-sub">隐私工具箱</span></div></div><span class="local-status"><span aria-hidden="true">●</span> 本机处理</span></header>
+  <div class="shell">
+    <aside class="sidebar"><div class="nav-label">工作台</div><nav aria-label="工具选择">
+      <button data-view="survey" aria-pressed="true"><span aria-hidden="true">01</span> 隐私问卷</button>
+      <button data-view="redact" aria-pressed="false"><span aria-hidden="true">02</span> 文件脱敏</button>
+      <button data-view="plan" aria-pressed="false"><span aria-hidden="true">03</span> 效果评估</button>
+    </nav><div class="sidebar-note">文件与回答在当前浏览器内处理。<br>刷新页面会清除未导出的内容。</div><div class="version">v0.1 · 本地预览版</div></aside>
+    <main id="workspace" tabindex="-1">
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+      <section id="view-survey" class="view">
+        <div class="page-heading"><div><p class="eyebrow">收集意见，关注群体</p><h1>隐私问卷</h1><p>回答在本地随机化，汇总后估计群体比例与误差。</p></div></div>
+        <nav class="subnav" aria-label="问卷步骤"><button data-step="create" aria-pressed="true">创建问卷</button><button data-step="fill" aria-pressed="false">填写问卷</button><button data-step="collect" aria-pressed="false">汇总结果</button></nav>
+        <section id="step-create" class="step">
+          <form id="create-form" class="panel">
+            <div class="section-heading"><h2>设置问题</h2><button type="button" id="load-example" class="text-button">载入示例</button></div>
+            <label class="field">问卷标题<input id="survey-title" required maxlength="300" value="团队反馈问卷"></label>
+            <div id="question-editor"></div>
+            <button type="button" id="add-question" class="secondary">＋ 添加问题</button>
+            <div class="help"><strong>保护强度怎么选？</strong> ε 越小，回答保护越强，估计误差通常越大。每道题分别设置，多题开销会累加。可在“效果评估”中比较方案。</div>
+            <div class="actionbar"><span id="create-meta"></span><button class="primary" type="submit">导出问卷配置</button></div>
+            <p class="footnote">将配置文件交给参与者。他们使用“填写问卷”生成受保护回答，再将回答文件交回。</p>
+          </form>
+        </section>
+        <section id="step-fill" class="step" hidden>
+          <div class="panel"><h2>载入要填写的问卷</h2><p class="muted">先选择组织者提供的问卷配置文件。</p><label class="file-field">问卷配置（JSON）<input type="file" id="fill-file" accept=".json,application/json"></label>
+            <div class="help">此功能保护回答内容，传送文件仍可能暴露参与身份。请使用可信的问卷配置与工具页面。</div>
+            <form id="answer-form" hidden><h3 id="fill-title"></h3><div id="answer-fields"></div><div class="actionbar"><span id="fill-budget"></span><button id="protect-button" class="primary" type="submit">生成受保护回答</button></div></form>
+            <div id="response-ready" class="result-box" hidden><h3>回答文件已准备好</h3><p>下载后交给组织者。重复下载使用同一份结果，不重新随机化。</p><button id="download-response" class="primary">下载受保护回答</button></div>
+          </div>
+        </section>
+        <section id="step-collect" class="step" hidden>
+          <form id="collect-form" class="panel"><h2>汇总回答文件</h2><p class="muted">问卷内容与保护参数必须和填写时一致。同一回答文件重复导入会自动去重。</p>
+            <div class="two-col"><label class="file-field">问卷配置（JSON）<input id="collect-survey" type="file" accept=".json" required></label><label class="file-field">回答文件（可多选）<input id="collect-files" type="file" accept=".json" multiple required></label></div>
+            <div class="actionbar"><span>仅汇总本次选择的文件</span><button type="submit" class="primary">计算群体结果</button></div>
+          </form><div id="collect-result" class="panel" hidden></div>
+        </section>
+      </section>
+      <section id="view-redact" class="view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">分享之前，减少暴露</p><h1>文件脱敏</h1><p>选择要删除或遮盖的字段，复核处理结果后再导出。</p></div></div>
+        <div class="panel"><div class="section-heading"><h2>1. 选择文件</h2><button id="redact-example" class="text-button">使用虚构示例</button></div><label class="file-field">CSV 或 JSON 文件<input id="redact-file" type="file" accept=".csv,.json"></label><p class="footnote">JSON 支持对象或对象数组，规则作用于顶层字段。嵌套字段可随整个上层字段删除或遮盖。</p></div>
+        <form id="redact-form" class="panel" hidden><div class="section-heading"><h2>2. 设置处理规则</h2><span id="redact-filename" class="muted"></span></div><div id="field-policies" class="policy-list"></div><label class="checkbox" id="spreadsheet-label"><input id="spreadsheet-safe" type="checkbox" checked> 以文本方式导出可能被表格软件当成公式的内容</label><p class="footnote">此选项会在相关单元格前加单引号，负数也可能转为文本。</p><div class="actionbar"><span>原文件保持不变</span><button class="primary" type="submit">处理并预览</button></div></form>
+        <div id="redact-result" class="panel" hidden><h2>3. 复核并导出</h2><p id="redact-summary" class="muted"></p><pre id="redact-preview" tabindex="0" aria-label="处理结果预览"></pre><p class="footnote">预览最多显示 8,000 个字符。下载包含完整结果。未选中的字段可能仍包含个人信息，请复核。</p><div class="button-row"><button id="download-redacted" class="primary">下载处理后文件</button><button id="download-audit" class="secondary">下载处理记录</button></div></div>
+      </section>
+      <section id="view-plan" class="view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">先评估，再开展调查</p><h1>效果评估</h1><p>比较人数、题目数量与保护强度对统计精度的影响。</p></div></div>
+        <div class="plan-layout"><form id="plan-form" class="panel"><h2>调查方案</h2>
+          <label class="field">每题选项数<input name="categories" type="number" min="2" max="256" step="1" value="3" required></label>
+          <div class="two-col"><label class="field">题目数量<input name="questions" type="number" min="1" max="100" step="1" value="2" required></label><label class="field">每人采集次数<input name="collections" type="number" min="1" max="10000" step="1" value="1" required></label></div>
+          <label class="field">每题隐私参数 ε<input name="epsilon" type="number" min="0.01" max="8" step="any" value="1" required><span class="hint">数值越小，保护越强，所需人数通常越多。</span></label>
+          <div class="two-col"><label class="field">预计人数<input name="samples" type="number" min="1" max="10000000" step="1" value="1000" required></label><label class="field">目标误差（百分点）<input name="radius" type="number" min="0.01" max="99" step="any" value="5" required></label></div>
+          <button class="primary full" type="submit">评估这个方案</button>
+        </form><div id="plan-result" class="panel plan-result"><div class="empty-state"><span aria-hidden="true">±</span><h2>多少人，才能看清群体意见？</h2><p>填写左侧方案，查看误差范围和达到目标精度所需的人数。</p></div></div></div>
+      </section>
+      <footer>隐私保护有适用范围。统计误差不包含选择偏差或虚假回答；字段脱敏不等同于完全匿名。</footer>
+    </main>
+  </div>
+</body>
+</html>
