@@ -2,7 +2,7 @@
 
 [![Verify](https://github.com/TingxuanHan/MoonPrivacyKit/actions/workflows/ci.yml/badge.svg)](https://github.com/TingxuanHan/MoonPrivacyKit/actions/workflows/ci.yml)
 
-用 MoonBit 构建的隐私工具库与中文本地工作台，帮助使用者收集群体意见、处理待分享文件，并理解保护强度对数据可用性的影响。
+用 MoonBit 构建的隐私工具库与中文本地工作台，帮助使用者收集群体意见、处理已掌握或收集的真实数据，并理解保护强度对数据可用性的影响。
 
 ![效果评估工作台](docs/images/workbench.png)
 
@@ -33,7 +33,7 @@ npm start
 ## 三个完整示例
 
 - **团队意见调查：**在“隐私问卷 → 创建问卷”载入示例并导出；参与者进入“填写问卷”载入配置、填写并下载受保护回答；组织者在“汇总结果”选择原问卷及回答文件，查看群体估计与误差。
-- **分享表格：**在“文件脱敏”导入 CSV／JSON，选择要删除或遮盖的字段，检查预览后下载结果和处理记录。原文件不被覆盖。
+- **处理真实数据：**在“文件脱敏”导入 CSV／JSON，选择要删除或遮盖的字段，检查预览后下载结果和处理记录。原文件不被覆盖。
 - **设计调查：**在“效果评估”输入预计人数、题目数量、保护参数和目标误差，查看当前精度及建议人数，导出方案用于后续调整。
 
 命令行对应流程见 [使用说明](docs/GETTING_STARTED.md)，可直接使用 `examples/` 中的虚构数据。
@@ -73,6 +73,6 @@ MoonBit 核心可面向 Wasm 和 JavaScript 编译；当前工作台运行的是
 
 ## 路线与来源
 
-项目长期目标是通用、可组合的隐私工具库，后续扩展问卷服务、应用统计 SDK 和更多数据源。首月三个目标及后续安排见 [开发路线](docs/ROADMAP.md)，项目申报正文见 [APPLICATION.md](docs/APPLICATION.md)。
+项目长期目标是覆盖数据采集、明细处理、协同计算与结果发布的隐私工具库。中心化差分隐私是本月计划；后续优先建设安全多方计算与隐私求交，按需求评估同态加密和零知识证明，并扩展问卷服务、SDK 与数据源。这些新增技术当前尚未实现。三个首月目标及阶段安排见[开发路线](docs/ROADMAP.md)，选型与保护边界见[技术规划](docs/TECHNOLOGY_PLAN.md)，申报正文见 [APPLICATION.md](docs/APPLICATION.md)。
 
 采用 Apache-2.0。随机响应使用公开统计方法，核心实现独立编写，不宣称发明新的隐私算法，也不把整个 MoonBit 隐私领域视为生态空白。[参考资料与相邻项目](docs/REFERENCES.md) 说明了项目范围与许可来源。
