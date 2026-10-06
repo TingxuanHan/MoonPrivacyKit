@@ -1,4 +1,4 @@
-import { dispatch } from '../dist/core.js';
+import { dispatch, dispatch_central } from '../dist/core.js';
 
 export function callCore(request) {
   const result = JSON.parse(dispatch(JSON.stringify(request)));
@@ -65,4 +65,46 @@ export async function protectResponse(survey, answers) {
 export async function aggregateResponses(survey, responses) {
   const fingerprint = await surveyFingerprint(survey);
   return callCore({ op: 'aggregate', survey, fingerprint, responses });
+}
+
+// Private, per-release buffer. Rejection sampling is exact for every bound used
+// by the integer mechanism. Neither words nor a seed leave this closure.
+function centralRandomSource() {
+  const provider = cryptoProvider();
+  const words = new Uint32Array(1024);
+  let cursor = words.length;
+  return size => {
+    if (!Number.isInteger(size) || size < 2 || size > 0x2000000) {
+      throw new Error('Invalid central random bound.');
+    }
+    const limit = Math.floor(0x100000000 / size) * size;
+    for (;;) {
+      if (cursor === words.length) {
+        provider.getRandomValues(words);
+        cursor = 0;
+      }
+      const value = words[cursor++];
+      if (value < limit) return value % size;
+    }
+  };
+}
+
+function releaseCentral(request) {
+  const result = JSON.parse(dispatch_central(JSON.stringify(request), centralRandomSource()));
+  if (!result.ok) throw new Error(result.error);
+  Object.freeze(result.data.counts);
+  return Object.freeze(result.data);
+}
+
+// Each invocation spends a fresh epsilon. Store and reuse its returned release
+// for retries or repeated downloads; this adapter does not maintain a ledger.
+export function centralCount(unitIds, { epsilon, maxContributions = 1 } = {}) {
+  return releaseCentral({ op: 'centralCount', epsilon, max_contributions: maxContributions, unit_ids: unitIds });
+}
+
+export function centralHistogram(unitIds, categoryIds, { categoryCount, epsilon, maxContributions = 1 } = {}) {
+  return releaseCentral({
+    op: 'centralHistogram', epsilon, max_contributions: maxContributions,
+    category_count: categoryCount, unit_ids: unitIds, category_ids: categoryIds,
+  });
 }

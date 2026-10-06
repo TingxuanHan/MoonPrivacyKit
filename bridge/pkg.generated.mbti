@@ -4,6 +4,8 @@ package "TingxuanHan/MoonPrivacyKit/bridge"
 // Values
 pub fn dispatch(String) -> String
 
+pub fn dispatch_central(String, (Int) -> Int) -> String
+
 // Errors
 
 // Types and methods

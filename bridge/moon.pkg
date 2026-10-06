@@ -5,5 +5,7 @@ import {
 pkgtype(kind: "executable")
 
 options(
-  link: { "js": { "exports": [ "dispatch" ], "format": "esm" } },
+  link: {
+    "js": { "exports": [ "dispatch", "dispatch_central" ], "format": "esm" },
+  },
 )

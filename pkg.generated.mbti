@@ -6,17 +6,27 @@ import {
 }
 
 // Values
+pub const CENTRAL_RECORD_LIMIT : Int = 100_000
+
 pub const GATE_SIZE : Int = 16_777_216
 
 pub fn aggregate_responses(Survey, String, Array[ProtectedResponse]) -> SurveyReport raise KitError
 
+pub fn central_count(Array[String], CentralMechanism, (Int) -> Int) -> CentralRelease raise KitError
+
+pub fn central_histogram(Array[String], Array[Int], CentralMechanism, (Int) -> Int) -> CentralRelease raise KitError
+
 pub fn dispatch(String) -> String
+
+pub fn dispatch_central(String, (Int) -> Int) -> String
 
 pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
 
 pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
 
 pub fn inspect_fields(String, String) -> Array[String] raise KitError
+
+pub fn make_central_mechanism(Int, Double, Int) -> CentralMechanism raise KitError
 
 pub fn make_mechanism(Int, Double) -> Mechanism raise KitError
 
@@ -55,6 +65,32 @@ pub struct CategoryEstimate {
   upper : Double
 } derive(ToJson)
 pub fn CategoryEstimate::to_json(Self) -> Json
+
+pub struct CentralMechanism {
+  category_count : Int
+  requested_epsilon : Double
+  max_contributions : Int
+  threshold : Int
+  epsilon_upper_bound : Double
+  absolute_error_bound : Int
+} derive(ToJson)
+pub fn CentralMechanism::to_json(Self) -> Json
+
+pub struct CentralRelease {
+  schema_version : Int
+  mechanism : String
+  query : String
+  adjacency : String
+  epsilon : Double
+  epsilon_upper_bound : Double
+  max_contributions : Int
+  category_count : Int
+  output_upper : Int
+  confidence : Double
+  absolute_error_bound : Int
+  counts : Array[Int]
+} derive(ToJson)
+pub fn CentralRelease::to_json(Self) -> Json
 
 pub struct CsvTable {
   headers : Array[String]

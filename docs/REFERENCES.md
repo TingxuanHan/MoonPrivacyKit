@@ -3,6 +3,7 @@
 ## 方法参考
 
 - [OpenDP 随机响应文档](https://docs.opendp.org/en/stable/api/user-guide/measurements/randomized-response.html)：有限类别随机响应及比例估计的数学参考。
+- [OpenDP 加性噪声机制](https://docs.opendp.org/en/stable/api/user-guide/measurements/additive-noise-mechanisms.html)：整数几何噪声、向量查询及 L1 敏感度的参考；本项目的保守有理数校准与采样说明见[中心化隐私统计](CENTRAL_PRIVACY.md)。
 - [OpenDP](https://github.com/opendp/opendp)：MIT 许可的差分隐私库。本项目不是 OpenDP 的整库移植，当前不复制其实现代码。
 - [NIST SP 800-226](https://csrc.nist.gov/pubs/sp/800/226/final)：差分隐私保证与实现风险的评估参考，用于审视保护单位、贡献约束、信任关系及发布流程。
 - [NIST 隐私增强密码学与差分隐私](https://www.nist.gov/blogs/cybersecurity-insights/privacy-enhancing-cryptography-complement-differential-privacy)：区分计算过程保护与输出保护，为组合方案提供背景。

@@ -40,6 +40,12 @@ fn decode_ints(value : Json) -> Array[Int] raise KitError {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "centralMechanism" =>
+      make_central_mechanism(
+        decode_int(field(request, "category_count")),
+        decode(field(request, "epsilon")),
+        decode_int(field(request, "max_contributions")),
+      ).to_json()
     "mechanism" =>
       make_mechanism(
         decode_int(field(request, "categories")),
@@ -153,6 +159,44 @@ pub fn dispatch(input : String) -> String {
       raise KitError("request exceeds the 10 MB text limit")
     }
     { "ok": true, "data": execute_request(read_json(input)) }
+  } catch {
+    KitError(message) => { "ok": false, "error": message }
+  }
+  result.stringify()
+}
+
+///|
+/// Low-level host boundary: random_below must supply fresh secure uniform draws.
+/// Validation failures are for the trusted holder, not a public query endpoint.
+pub fn dispatch_central(input : String, random_below : (Int) -> Int) -> String {
+  let result : Json = try {
+    if input.length() > 10_000_000 {
+      raise KitError("request exceeds the 10 MB text limit")
+    }
+    let request = read_json(input)
+    let op : String = decode(field(request, "op"))
+    let categories = match op {
+      "centralCount" => 1
+      "centralHistogram" => decode_int(field(request, "category_count"))
+      _ => raise KitError("unknown central operation")
+    }
+    let mechanism = make_central_mechanism(
+      categories,
+      decode(field(request, "epsilon")),
+      decode_int(field(request, "max_contributions")),
+    )
+    let units : Array[String] = decode(field(request, "unit_ids"))
+    let release = if op == "centralCount" {
+      central_count(units, mechanism, random_below)
+    } else {
+      central_histogram(
+        units,
+        decode_ints(field(request, "category_ids")),
+        mechanism,
+        random_below,
+      )
+    }
+    { "ok": true, "data": release.to_json() }
   } catch {
     KitError(message) => { "ok": false, "error": message }
   }
