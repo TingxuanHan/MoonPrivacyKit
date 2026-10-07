@@ -1,0 +1,10 @@
+{
+  "scope": "example-october",
+  "requestId": "feedback-histogram-v1",
+  "query": "histogram",
+  "epsilon": "0.7",
+  "maxContributions": 1,
+  "categories": ["满意", "一般", "不满意"],
+  "unitIds": ["example-a", "example-a", "example-b", "example-c"],
+  "categoryIds": [0, 1, 1, 2]
+}

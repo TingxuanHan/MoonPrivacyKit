@@ -40,6 +40,23 @@ fn decode_ints(value : Json) -> Array[Int] raise KitError {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "budgetState" =>
+      make_budget_state(
+        decode_int(field(request, "total_units")),
+        decode_int(field(request, "spent_units")),
+      ).to_json()
+    "chargeBudget" =>
+      charge_budget(
+        make_budget_state(
+          decode_int(field(request, "total_units")),
+          decode_int(field(request, "spent_units")),
+        ),
+        decode_int(field(request, "charge_units")),
+      ).to_json()
+    "validateCentral" => {
+      let (_, mechanism, _) = prepare_central_request(field(request, "request"))
+      mechanism.to_json()
+    }
     "centralMechanism" =>
       make_central_mechanism(
         decode_int(field(request, "category_count")),
@@ -166,6 +183,43 @@ pub fn dispatch(input : String) -> String {
 }
 
 ///|
+fn prepare_central_request(
+  request : Json,
+) -> (Array[Int], CentralMechanism, String) raise KitError {
+  let op : String = decode(field(request, "op"))
+  let categories = match op {
+    "centralCount" => 1
+    "centralHistogram" => decode_int(field(request, "category_count"))
+    _ => raise KitError("unknown central operation")
+  }
+  let mechanism = make_central_mechanism(
+    categories,
+    decode(field(request, "epsilon")),
+    decode_int(field(request, "max_contributions")),
+  )
+  let units : Array[String] = decode(field(request, "unit_ids"))
+  if units.length() > CENTRAL_RECORD_LIMIT {
+    raise KitError(
+      "central input arrays must match and contain at most 100000 records",
+    )
+  }
+  let bins = if op == "centralCount" {
+    Array::make(units.length(), 0)
+  } else {
+    decode_ints(field(request, "category_ids"))
+  }
+  (
+    central_bounded_counts(units, bins, mechanism),
+    mechanism,
+    if op == "centralCount" {
+      "count"
+    } else {
+      "histogram"
+    },
+  )
+}
+
+///|
 /// Low-level host boundary: random_below must supply fresh secure uniform draws.
 /// Validation failures are for the trusted holder, not a public query endpoint.
 pub fn dispatch_central(input : String, random_below : (Int) -> Int) -> String {
@@ -173,29 +227,8 @@ pub fn dispatch_central(input : String, random_below : (Int) -> Int) -> String {
     if input.length() > 10_000_000 {
       raise KitError("request exceeds the 10 MB text limit")
     }
-    let request = read_json(input)
-    let op : String = decode(field(request, "op"))
-    let categories = match op {
-      "centralCount" => 1
-      "centralHistogram" => decode_int(field(request, "category_count"))
-      _ => raise KitError("unknown central operation")
-    }
-    let mechanism = make_central_mechanism(
-      categories,
-      decode(field(request, "epsilon")),
-      decode_int(field(request, "max_contributions")),
-    )
-    let units : Array[String] = decode(field(request, "unit_ids"))
-    let release = if op == "centralCount" {
-      central_count(units, mechanism, random_below)
-    } else {
-      central_histogram(
-        units,
-        decode_ints(field(request, "category_ids")),
-        mechanism,
-        random_below,
-      )
-    }
+    let (counts, mechanism, query) = prepare_central_request(read_json(input))
+    let release = central_release(counts, mechanism, query, random_below)
     { "ok": true, "data": release.to_json() }
   } catch {
     KitError(message) => { "ok": false, "error": message }

@@ -16,6 +16,8 @@ pub fn central_count(Array[String], CentralMechanism, (Int) -> Int) -> CentralRe
 
 pub fn central_histogram(Array[String], Array[Int], CentralMechanism, (Int) -> Int) -> CentralRelease raise KitError
 
+pub fn charge_budget(BudgetState, Int) -> BudgetState raise KitError
+
 pub fn dispatch(String) -> String
 
 pub fn dispatch_central(String, (Int) -> Int) -> String
@@ -25,6 +27,8 @@ pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
 pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
 
 pub fn inspect_fields(String, String) -> Array[String] raise KitError
+
+pub fn make_budget_state(Int, Int) -> BudgetState raise KitError
 
 pub fn make_central_mechanism(Int, Double, Int) -> CentralMechanism raise KitError
 
@@ -56,6 +60,13 @@ pub suberror KitError {
 }
 
 // Types and methods
+pub struct BudgetState {
+  total_units : Int
+  spent_units : Int
+  remaining_units : Int
+} derive(ToJson)
+pub fn BudgetState::to_json(Self) -> Json
+
 pub struct CategoryEstimate {
   category : Int
   reported_count : Int

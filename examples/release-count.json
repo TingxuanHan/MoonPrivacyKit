@@ -1,0 +1,8 @@
+{
+  "scope": "example-october",
+  "requestId": "participant-count-v1",
+  "query": "count",
+  "epsilon": "0.3",
+  "maxContributions": 1,
+  "unitIds": ["example-a", "example-a", "example-b", "example-c"]
+}

@@ -2,7 +2,7 @@
 
 ## 工作台
 
-运行 `npm run build` 后运行 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit 稳定版工具链和 Node.js 22+。Windows 的 `start.cmd` 可以完成构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。
+运行 `npm run build` 后运行 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit 稳定版工具链和 Node.js 22.13.0+。Windows 的 `start.cmd` 可以完成构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。
 
 ### 隐私问卷
 
@@ -43,7 +43,11 @@ node cli/main.mjs plan examples/plan.json plan-report.json
 
 `protect` 在终端逐题询问。自动化管道可向其标准输入传入从 0 开始的选项下标数组；不要把真实回答放在命令行参数、共享日志或 Git 仓库中。脱敏会同时写入 `<输出文件>.audit.json`。使用 `private-data/` 和 `reports/` 目录可避免默认被 Git 跟踪，但仍需在提交前检查。
 
+中心化统计另提供 `init-ledger`、`publish`、`ledger-status` 和 `export-release` 命令，可完成创建预算、发布、查看余额与重试导出。完整命令和虚构数据示例见[发布预算与结果复用](RELEASE_LEDGER.md)。当前请求采用约定的 JSON 结构，尚未支持从任意业务表中直接选择统计字段。
+
 ## SDK
+
+### 问卷与字段处理接口
 
 ```js
 import { protectResponse, aggregateResponses, callCore } from './runtime/client.mjs';

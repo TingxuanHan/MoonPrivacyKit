@@ -12,9 +12,15 @@ node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs protect <问卷.json> <新回答.json>
 node cli/main.mjs aggregate <问卷.json> <新报告.json> <回答.json>...
 node cli/main.mjs redact <csv|json> <原文件> <新文件> <规则.json>
+node cli/main.mjs init-ledger <新账本.sqlite> <保护范围编号> <总epsilon>
+node cli/main.mjs ledger-status <账本.sqlite>
+node cli/main.mjs publish <账本.sqlite> <发布请求.json> <新报告.json>
+node cli/main.mjs export-release <账本.sqlite> <请求编号> <新报告.json>
 
 protect 在终端逐题询问；管道输入时接收选项下标数组（从 0 开始）。
 所有输出均拒绝覆盖已有文件。重复传送回答时复用已导出的回答文件。
+发布请求使用稳定的 requestId；重试使用同一编号，取回原结果且不重复扣费。
+账本保存在本地，不应公开。total epsilon 使用最多六位小数。
 examples/ 提供问卷、方案、脱敏规则与虚构数据。`;
 
 function readText(path) {
@@ -37,7 +43,25 @@ function writeNew(path, value) {
 async function main() {
   const [command, ...args] = process.argv.slice(2);
   if (!command || ['--help', '-h', 'help'].includes(command)) { console.log(help); return; }
-  if (command === 'init-survey' && args.length === 1) {
+  if (command === 'init-ledger' && args.length === 3) {
+    const { createLedger } = await import('../runtime/ledger.mjs');
+    createLedger(args[0], { scope: args[1], totalEpsilon: args[2] });
+  } else if (command === 'ledger-status' && args.length === 1) {
+    const { ledgerStatus } = await import('../runtime/ledger.mjs');
+    console.log(JSON.stringify(ledgerStatus(args[0]), null, 2));
+    return;
+  } else if (command === 'publish' && args.length === 3) {
+    requireNew([args[2]]);
+    const { publishRelease } = await import('../runtime/ledger.mjs');
+    const result = publishRelease(args[0], readJson(args[1]));
+    // Persistence precedes export. If writing fails, export-release can recover
+    // the committed result without rerunning the mechanism or spending again.
+    writeNew(args[2], result);
+  } else if (command === 'export-release' && args.length === 3) {
+    requireNew([args[2]]);
+    const { savedRelease } = await import('../runtime/ledger.mjs');
+    writeNew(args[2], savedRelease(args[0], args[1]));
+  } else if (command === 'init-survey' && args.length === 1) {
     requireNew(args);
     const template = JSON.parse(readFileSync(new URL('../examples/survey.json', import.meta.url), 'utf8'));
     writeNew(args[0], validateSurvey(template));
@@ -86,7 +110,7 @@ async function main() {
 
 main().catch(error => {
   // Filesystem and JSON parser diagnostics can embed filenames or private input.
-  const message = error.code || error instanceof SyntaxError ? 'File operation failed. Check paths and permissions.' : error.message;
+  const message = error.name !== 'LedgerError' && (error.code || error instanceof SyntaxError) ? 'File operation failed. Check paths and permissions.' : error.message;
   console.error(`未完成：${message}`);
   process.exitCode = 1;
 });
