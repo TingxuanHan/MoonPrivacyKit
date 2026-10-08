@@ -1,5 +1,7 @@
 // Raw tables and the session token stay in memory. Browser storage contains only
 // the selected project and a pending request ID used to recover a saved release.
+import { parseStatisticsTemplate, createStatisticsTemplate, checkStatisticsTemplate } from '/runtime/templates.mjs';
+
 export function initStatistics({ callCore, element, download }) {
   const $ = id => document.getElementById(`stats-${id}`);
   const PENDING = 'mpk.statistics.pending.v1';
@@ -7,6 +9,7 @@ export function initStatistics({ callCore, element, download }) {
   const idPattern = /^[A-Za-z0-9_-]{1,320}$/;
   let loaded = false, busy = false, token = '', selected = '', projects = [];
   let table = null, pending = null, snapshot = null, completed = false, historyOffset = 0;
+  let templatePreview = null, templateCheck = null;
   try {
     selected = sessionStorage.getItem(SELECTED) || '';
     const saved = JSON.parse(sessionStorage.getItem(PENDING) || 'null');
@@ -34,6 +37,9 @@ export function initStatistics({ callCore, element, download }) {
     $('publish').disabled = busy;
     $('recover').disabled = busy;
     $('next').disabled = busy;
+    $('template-complete').disabled = busy;
+    $('template-complete').hidden = !table;
+    $('template-apply').disabled = busy || !templateCheck?.compatible;
     $('history-refresh').disabled = busy;
     $('more').disabled = busy;
     for (const button of $('history').querySelectorAll('button')) button.disabled = busy;
@@ -203,6 +209,46 @@ export function initStatistics({ callCore, element, download }) {
       $('categories').value = '满意\n一般\n不满意';
     }
     estimate();
+    previewTemplate();
+  }
+  function previewTemplate() {
+    $('template-preview').hidden = !templatePreview;
+    templateCheck = null;
+    if (!templatePreview) { sync(); return; }
+    const plan = templatePreview.settings;
+    $('template-title').textContent = templatePreview.name;
+    $('template-description').textContent = `${plan.query === 'count' ? '计数' : '类别分布'} · 人员列：${plan.unitField}${plan.query === 'histogram' ? ` · 类别列：${plan.categoryField}` : ''} · 每人最多 ${plan.maxContributions} 条 · 本次 ε ${plan.epsilon}`;
+    $('template-category-list').hidden = plan.query !== 'histogram';
+    $('template-category-summary').textContent = `查看 ${plan.categories?.length || 0} 个预设类别`;
+    $('template-category-values').textContent = plan.categories?.join('\n') || '';
+    let result = '先选择统计源文件，再检查这个模板能否使用。';
+    if (table) {
+      try {
+        templateCheck = checkStatisticsTemplate(templatePreview, table.format, table.input);
+        result = templateCheck.compatible ? '字段与记录校验通过。应用后请核对列的含义和人员标识，确认适合本次任务。'
+          : templateCheck.issue === 'missing_fields' ? `缺少模板所需字段：${templateCheck.missing_fields.join('、')}。请选择匹配的文件，或取消预览后手动设置。`
+          : '表格记录与模板不兼容。请检查人员标识、字段类型或预设类别；当前设置保持不变。';
+      } catch { result = '无法检查这份表格，请检查格式和大小，或重新选择文件。'; }
+    }
+    $('template-check').textContent = result;
+    $('template-check').classList.toggle('template-incompatible', Boolean(table && !templateCheck?.compatible));
+    sync();
+  }
+  function importTemplate(text) {
+    let parsed;
+    try { parsed = parseStatisticsTemplate(text); }
+    catch { invalid('模板无法读取：请检查文件格式、版本、字段和保护参数。仅接受统计模板，不接受报告或发布请求；当前设置未修改。'); }
+    templatePreview = parsed;
+    $('templates').open = true;
+    previewTemplate();
+  }
+  function exportTemplate() {
+    if (!table) invalid('请先载入表格并选择统计字段。');
+    let template;
+    try { template = createStatisticsTemplate($('template-name').value, settings()); }
+    catch { invalid('无法保存配置，请检查模板名称、字段、类别和保护参数。名称限 1 至 80 个字符，类别须为不重复的单行文字。'); }
+    download('statistics-template.json', template);
+    message('统计配置已导出；未导出原始表格、项目身份或预算记录，也未消耗预算。');
   }
   document.querySelector('[data-view="statistics"]').addEventListener('click', () => {
     if (!loaded) run(async () => { await refresh(); loaded = true; });
@@ -217,6 +263,7 @@ export function initStatistics({ callCore, element, download }) {
   });
   $('file').addEventListener('change', () => run(async () => {
     table = null; $('settings').hidden = true; $('report').hidden = true; $('file-note').textContent = '未载入有效文件，请选择符合要求的 CSV 或 JSON。';
+    previewTemplate();
     const file = $('file').files[0];
     if (!file || file.size > 4_000_000) invalid('请选择不超过 4 MB 的 CSV 或 JSON 文件。');
     const format = file.name.split('.').pop().toLowerCase();
@@ -230,6 +277,41 @@ export function initStatistics({ callCore, element, download }) {
     $('file').value = '';
     loadTable('虚构统计示例.csv', 'person_id,answer\nunit-001,满意\nunit-002,一般\nunit-003,满意\nunit-001,不满意\nunit-004,不满意', 'csv', true);
   }));
+  $('template-preset').addEventListener('change', () => run(async () => {
+    const preset = $('template-preset').value;
+    templatePreview = null; previewTemplate(); $('template-file').value = '';
+    if (!['count', 'histogram'].includes(preset)) return;
+    const response = await fetch(`/examples/statistics-${preset}-template.json`, { cache: 'no-store' });
+    if (!response.ok) invalid('暂时无法载入起步模板，请检查本机服务。');
+    importTemplate(await response.text());
+  }));
+  $('template-file').addEventListener('change', () => run(async () => {
+    templatePreview = null; previewTemplate(); $('template-preset').value = '';
+    const file = $('template-file').files[0];
+    if (!file || file.size > 400_000) invalid('请选择不超过 400 KB 的统计模板 JSON 文件。');
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()); }
+    catch { invalid('模板不是有效的 UTF-8 文本，请检查编码后重试。'); }
+    importTemplate(text);
+  }));
+  $('template-apply').addEventListener('click', () => run(async () => {
+    if (!templatePreview || !table) return;
+    previewTemplate();
+    if (!templateCheck?.compatible) invalid('当前表格与模板不兼容，原有设置未修改。');
+    const plan = templatePreview.settings;
+    $('query').value = plan.query; $('unit').value = plan.unitField;
+    $('category').value = plan.categoryField || ''; $('categories').value = plan.categories?.join('\n') || '';
+    $('epsilon').value = plan.epsilon; $('cap').value = plan.maxContributions;
+    $('template-name').value = templatePreview.name;
+    $('report').hidden = true; estimate();
+    message('模板已应用。请核对统计设置后再发布；项目、累计预算和待确认发布编号保持不变。');
+    $('query').focus();
+  }));
+  $('template-dismiss').addEventListener('click', () => {
+    templatePreview = null; $('template-file').value = ''; $('template-preset').value = ''; previewTemplate();
+  });
+  $('template-export').addEventListener('click', () => run(exportTemplate));
+  $('template-complete').addEventListener('click', () => run(exportTemplate));
   $('settings').addEventListener('input', () => { $('report').hidden = true; estimate(); });
   $('form').addEventListener('submit', event => {
     event.preventDefault(); run(async () => {

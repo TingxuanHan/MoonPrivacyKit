@@ -18,6 +18,8 @@ pub fn central_histogram(Array[String], Array[Int], CentralMechanism, (Int) -> I
 
 pub fn charge_budget(BudgetState, Int) -> BudgetState raise KitError
 
+pub fn check_statistics_template(StatisticsTemplate, String, String) -> TemplateCompatibility raise KitError
+
 pub fn dispatch(String) -> String
 
 pub fn dispatch_central(String, (Int) -> Int) -> String
@@ -39,6 +41,8 @@ pub fn map_table(String, String, TableMapping) -> MappedTable raise KitError
 pub fn parse_csv(String) -> CsvTable raise KitError
 
 pub fn parse_response(String) -> ProtectedResponse raise KitError
+
+pub fn parse_statistics_template(String) -> StatisticsTemplate raise KitError
 
 pub fn parse_survey(String) -> Survey raise KitError
 
@@ -193,6 +197,18 @@ pub struct RedactionResult {
 } derive(ToJson)
 pub fn RedactionResult::to_json(Self) -> Json
 
+pub struct StatisticsTemplate {
+  name : String
+  query : String
+  unit_field : String
+  category_field : String
+  categories : Array[String]
+  epsilon : String
+  max_contributions : Int
+}
+pub fn StatisticsTemplate::to_json(Self) -> Json
+pub impl ToJson for StatisticsTemplate
+
 pub(all) struct Survey {
   schema_version : Int
   id : String
@@ -219,6 +235,13 @@ pub(all) struct TableMapping {
 } derive(ToJson, @json.FromJson)
 pub fn TableMapping::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn TableMapping::to_json(Self) -> Json
+
+pub struct TemplateCompatibility {
+  compatible : Bool
+  missing_fields : Array[String]
+  issue : String
+} derive(ToJson)
+pub fn TemplateCompatibility::to_json(Self) -> Json
 
 // Type aliases
 

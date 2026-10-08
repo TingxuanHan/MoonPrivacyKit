@@ -120,6 +120,12 @@ test('only workbench assets are served and responses prohibit caching and framin
   assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
   assert.equal(page.headers.get('access-control-allow-origin'), null);
   assert.equal((await fetch(`${origin}/web/statistics.mjs`)).status, 200);
+  assert.equal((await fetch(`${origin}/runtime/templates.mjs`)).status, 200);
+  for (const query of ['count', 'histogram']) {
+    const template = await (await fetch(`${origin}/examples/statistics-${query}-template.json`)).json();
+    assert.equal(template.kind, 'moonprivacykit/statistics-template');
+    assert.equal(template.settings.query, query);
+  }
 });
 
 test('HTTP input size and UTF-8 validation reject data before creating a project', async () => {

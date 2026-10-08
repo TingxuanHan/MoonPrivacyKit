@@ -1,5 +1,6 @@
 import { callCore } from './client.mjs';
-import { publishRelease } from './ledger.mjs';
+import { publishRelease, ledgerStatus } from './ledger.mjs';
+import { parseStatisticsTemplate } from './templates.mjs';
 
 function invalid() {
   throw new Error('Invalid table plan. Use schemaVersion 1, a count or histogram query, and only the documented fields.');
@@ -45,4 +46,13 @@ export function publishTableRelease(ledgerPath, format, input, configuration) {
     categories: plan.categories, categoryIds: mapped.category_ids,
   });
   return publishRelease(ledgerPath, request);
+}
+
+// The caller supplies a fresh or retried request ID explicitly. Importing a
+// template cannot create a ledger, reset its budget, or choose a release ID.
+export function publishTemplateRelease(ledgerPath, format, input, templateText, requestId) {
+  const template = parseStatisticsTemplate(templateText);
+  return publishTableRelease(ledgerPath, format, input, {
+    ...template.settings, schemaVersion: 1, scope: ledgerStatus(ledgerPath).scope, requestId,
+  });
 }

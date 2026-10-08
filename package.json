@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs",
+    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs tests/templates.test.mjs",
     "start": "node scripts/serve.mjs",
     "test:ui": "node --test tests/ui.test.mjs",
     "verify": "node scripts/verify.mjs"

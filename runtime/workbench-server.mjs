@@ -82,6 +82,9 @@ export function createWorkbenchServer({ root, dataDir }) {
     ['/web/statistics.mjs', ['web/statistics.mjs', 'text/javascript; charset=utf-8']],
     ['/web/style.css', ['web/style.css', 'text/css; charset=utf-8']],
     ['/runtime/client.mjs', ['runtime/client.mjs', 'text/javascript; charset=utf-8']],
+    ['/runtime/templates.mjs', ['runtime/templates.mjs', 'text/javascript; charset=utf-8']],
+    ['/examples/statistics-count-template.json', ['examples/statistics-count-template.json', 'application/json; charset=utf-8']],
+    ['/examples/statistics-histogram-template.json', ['examples/statistics-histogram-template.json', 'application/json; charset=utf-8']],
     ['/dist/core.js', ['dist/core.js', 'text/javascript; charset=utf-8']],
   ]);
   async function existing(id) {
@@ -125,7 +128,7 @@ export function createWorkbenchServer({ root, dataDir }) {
         let data;
         try { data = await readFile(resolve(root, route[0])); }
         catch { reject('BUILD_MISSING', 503, '请先构建本地工作台。'); }
-        send(200, data, route[1]);
+        send(200, route[1].startsWith('application/json') ? JSON.parse(data.toString('utf8')) : data, route[1]);
         return;
       }
       const origin = `http://${host}`;

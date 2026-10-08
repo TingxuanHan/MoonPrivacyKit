@@ -219,6 +219,8 @@ test('invalid encoding, malformed tables, unknown categories and over-budget req
   await page.screenshot({ path: join(artifacts, 'statistics-mobile-error.png'), fullPage: true });
   await page.locator('#stats-epsilon').focus();
   await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.parentElement.id), 'stats-template-save');
+  await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'stats-publish');
 });
 
@@ -333,3 +335,121 @@ test('history loads multiple pages and switching projects restores the correct b
   assert.deepEqual(external, []);
 });
 
+let exportedTemplatePath;
+test('built-in and exported templates reuse CSV settings on JSON without publishing or changing the budget', async () => {
+  await page.reload();
+  await page.setViewportSize({ width: 1365, height: 1000 });
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await statsProject('模板测试');
+  await page.locator('#stats-templates > summary').click();
+  await page.locator('#stats-template-preset').selectOption('histogram'); await statsIdle();
+  await page.locator('#stats-template-category-summary').click();
+  assert.equal(await page.locator('#stats-template-category-values').innerText(), '满意\n一般\n不满意');
+  assert.equal(await page.locator('#stats-template-apply').isEnabled(), false);
+  assert.match(await page.locator('#stats-template-check').innerText(), /先选择统计源文件/);
+  await page.locator('#stats-file').setInputFiles(join(root, 'examples/table.csv')); await statsIdle();
+  assert.equal(await page.locator('#stats-template-apply').isEnabled(), true);
+  assert.equal(await page.locator('#stats-unit').inputValue(), '');
+  assert.equal(await page.locator('#stats-query').inputValue(), 'count');
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  assert.equal(await page.locator('#stats-unit').inputValue(), 'person_id');
+  assert.equal(await page.locator('#stats-category').inputValue(), 'answer');
+  assert.equal(await page.locator('#stats-query').inputValue(), 'histogram');
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['1', '0', '1', '0']);
+  await page.locator('#stats-template-save summary').click();
+  await page.locator('#stats-template-name').fill('季度满意度配置');
+  await page.locator('#stats-template-name').focus(); await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'stats-template-export');
+  exportedTemplatePath = await saveDownload(() => page.locator('#stats-template-export').click(), 'portable-template.json');
+  await statsIdle();
+  const template = JSON.parse(readFileSync(exportedTemplatePath));
+  assert.equal(template.name, '季度满意度配置');
+  assert.deepEqual(Object.keys(template).sort(), ['kind', 'name', 'schemaVersion', 'settings']);
+  assert.deepEqual(Object.keys(template.settings).sort(), ['categories', 'categoryField', 'epsilon', 'maxContributions', 'query', 'unitField']);
+  assert.ok(!readFileSync(exportedTemplatePath, 'utf8').includes('unit-001'));
+  await page.screenshot({ path: join(artifacts, 'templates-desktop.png'), fullPage: true });
+  await page.reload();
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await page.locator('#stats-file').setInputFiles(join(root, 'examples/table.json')); await statsIdle();
+  await page.locator('#stats-templates > summary').click();
+  await page.locator('#stats-template-file').setInputFiles(exportedTemplatePath); await statsIdle();
+  assert.equal(await page.locator('#stats-query').inputValue(), 'count');
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  assert.equal(await page.locator('#stats-query').inputValue(), 'histogram');
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['1', '0', '1', '0']);
+  await page.locator('#stats-publish').click();
+  await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
+  const saved = await saveDownload(() => page.locator('#stats-template-complete').click(), 'completed-template.json');
+  await statsIdle();
+  assert.deepEqual(JSON.parse(readFileSync(saved)), template);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.7', '0.3', '1', '1']);
+});
+
+test('incompatible and malformed templates preserve active settings and never auto-publish', async () => {
+  await page.locator('#stats-next').click();
+  const prior = await page.locator('#stats-epsilon').inputValue();
+  const base = JSON.parse(readFileSync(exportedTemplatePath));
+  const upload = async value => {
+    await page.locator('#stats-template-file').setInputFiles({ name: 'template.json', mimeType: 'application/json', buffer: Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)) });
+    await statsIdle();
+  };
+  await upload({ ...base, settings: { ...base.settings, unitField: 'renamed_person', epsilon: '0.1' } });
+  assert.match(await page.locator('#stats-template-check').innerText(), /缺少模板所需字段：renamed_person/);
+  assert.equal(await page.locator('#stats-template-apply').isEnabled(), false);
+  assert.equal(await page.locator('#stats-epsilon').inputValue(), prior);
+  for (const value of [
+    { ...base, schemaVersion: 2 }, { ...base, requestId: 'hidden-request' },
+    JSON.stringify(base).replace('"epsilon":"0.3"', '"epsilon":"0.3","epsilon":"0.1"'),
+  ]) {
+    await upload(value);
+    assert.equal(await page.locator('#stats-template-preview').isVisible(), false);
+    assert.match(await page.locator('#stats-notice').innerText(), /模板无法读取/);
+    assert.equal(await page.locator('#stats-epsilon').inputValue(), prior);
+  }
+  await page.locator('#stats-template-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from([0xff]) }); await statsIdle();
+  assert.match(await page.locator('#stats-notice').innerText(), /UTF-8/);
+  await upload(base);
+  await page.locator('#stats-file').setInputFiles({ name: 'private.csv', mimeType: 'text/csv', buffer: Buffer.from('person_id,answer\nprivate-person,private-unlisted') }); await statsIdle();
+  assert.equal(await page.locator('#stats-template-apply').isEnabled(), false);
+  assert.match(await page.locator('#stats-template-check').innerText(), /表格记录与模板不兼容/);
+  assert.ok(!(await page.locator('#stats-template-check').innerText()).includes('private-unlisted'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'templates-mobile-incompatible.png'), fullPage: true });
+  await page.locator('#stats-template-dismiss').click();
+  assert.equal(await page.locator('#stats-template-preview').isVisible(), false);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.7', '0.3', '1', '1']);
+});
+
+test('template reuse during interrupted recovery retains the original request ID and renders hostile labels safely', async () => {
+  await page.locator('#stats-file').setInputFiles(join(root, 'examples/table.csv')); await statsIdle();
+  await page.locator('#stats-template-preset').selectOption('count'); await statsIdle();
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  assert.equal(await page.locator('#stats-query').inputValue(), 'count');
+  const templatePath = await saveDownload(() => page.locator('#stats-template-save summary').click().then(() => page.locator('#stats-template-export').click()), 'pending-template.json');
+  await statsIdle();
+  let requestId;
+  await page.route('**/publish', async route => { requestId = route.request().postDataJSON().plan.requestId; await route.abort('failed'); }, { times: 1 });
+  await page.locator('#stats-publish').click(); await statsIdle();
+  assert.equal(await page.locator('#stats-template-file').isEnabled(), false);
+  await page.reload();
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await page.locator('#stats-file').setInputFiles(join(root, 'examples/table.csv')); await statsIdle();
+  await page.locator('#stats-templates > summary').click();
+  const template = JSON.parse(readFileSync(templatePath));
+  const hostile = { ...template, name: '<img src=x onerror=alert(1)>' + '模板名称'.repeat(12) };
+  await page.locator('#stats-template-file').setInputFiles({ name: 'template.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(hostile)) }); await statsIdle();
+  assert.equal(await page.locator('#stats-template-preview img').count(), 0);
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  assert.equal(JSON.parse(await page.evaluate(() => sessionStorage.getItem('mpk.statistics.pending.v1'))).requestId, requestId);
+  assert.equal(await page.locator('#stats-project').isEnabled(), false);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'templates-mobile-recovery.png'), fullPage: true });
+  let retried;
+  await page.route('**/publish', async route => { retried = route.request().postDataJSON().plan.requestId; await route.continue(); }, { times: 1 });
+  await page.locator('#stats-publish').click();
+  await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
+  assert.equal(retried, requestId);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.4', '0.6', '1', '2']);
+  assert.deepEqual(errors, []); assert.deepEqual(external, []);
+});

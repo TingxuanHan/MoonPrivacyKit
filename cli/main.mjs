@@ -16,6 +16,8 @@ node cli/main.mjs init-ledger <新账本.sqlite> <保护范围编号> <总epsilo
 node cli/main.mjs ledger-status <账本.sqlite>
 node cli/main.mjs publish <账本.sqlite> <发布请求.json> <新报告.json>
 node cli/main.mjs publish-table <csv|json> <账本.sqlite> <原文件> <发布方案.json> <新报告.json>
+node cli/main.mjs check-template <csv|json> <原文件> <模板.json>
+node cli/main.mjs publish-template <csv|json> <账本.sqlite> <原文件> <模板.json> <请求编号> <新报告.json>
 node cli/main.mjs export-release <账本.sqlite> <请求编号> <新报告.json>
 
 protect 在终端逐题询问；管道输入时接收选项下标数组（从 0 开始）。
@@ -71,6 +73,18 @@ async function main() {
     const { publishTableRelease } = await import('../runtime/table.mjs');
     const result = publishTableRelease(ledger, format, readText(input, true), readJson(plan));
     writeNew(output, result);
+  } else if (command === 'check-template' && args.length === 3) {
+    const { parseStatisticsTemplate, checkStatisticsTemplate } = await import('../runtime/templates.mjs');
+    const template = parseStatisticsTemplate(readText(args[2], true));
+    const result = checkStatisticsTemplate(template, args[0], readText(args[1], true));
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.compatible) process.exitCode = 1;
+    return;
+  } else if (command === 'publish-template' && args.length === 6) {
+    const [format, ledger, input, template, requestId, output] = args;
+    requireNew([output]);
+    const { publishTemplateRelease } = await import('../runtime/table.mjs');
+    writeNew(output, publishTemplateRelease(ledger, format, readText(input, true), readText(template, true), requestId));
   } else if (command === 'export-release' && args.length === 3) {
     requireNew([args[2]]);
     const { savedRelease } = await import('../runtime/ledger.mjs');

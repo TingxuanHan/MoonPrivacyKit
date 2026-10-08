@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "moonprivacykit/statistics-template",
+  "name": "满意度类别分布",
+  "settings": {
+    "query": "histogram",
+    "unitField": "person_id",
+    "categoryField": "answer",
+    "categories": ["满意", "一般", "不满意"],
+    "epsilon": "0.3",
+    "maxContributions": 1
+  }
+}

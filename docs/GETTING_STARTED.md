@@ -37,6 +37,8 @@
 
 请求中断时保留原编号，优先“恢复已保存报告”，也可“重试本次发布”。刷新页面后只保留恢复编号，不保留表格；报告尚未找到时，重新选择原文件和原设置再重试。详细的文件位置、恢复边界与保护条件见[本地统计工作台](LOCAL_WORKBENCH.md)。
 
+重复使用相同统计口径时，可导出当前配置模板，下次载入兼容文件后导入、预览并应用。支持人数统计和满意度分布起步模板；导入、检查、应用和导出均不消耗预算。模板不保存原始数据或账本身份，详见[统计配置模板](STATISTICS_TEMPLATES.md)。
+
 ## 命令行
 
 在仓库根目录构建后运行。输出路径必须是新文件；程序拒绝覆盖已有文件。
@@ -53,6 +55,8 @@ node cli/main.mjs plan examples/plan.json plan-report.json
 `protect` 在终端逐题询问。自动化管道可向其标准输入传入从 0 开始的选项下标数组；不要把真实回答放在命令行参数、共享日志或 Git 仓库中。脱敏会同时写入 `<输出文件>.audit.json`。使用 `private-data/` 和 `reports/` 目录可避免默认被 Git 跟踪，但仍需在提交前检查。
 
 中心化统计另提供 `init-ledger`、`publish`、`publish-table`、`ledger-status` 和 `export-release` 命令，可完成创建预算、发布、查看余额与重试导出。`publish` 接收约定的 JSON 请求，`publish-table` 从 CSV／JSON 表中映射人员标识和类别字段。完整示例见[发布预算与结果复用](RELEASE_LEDGER.md)与[真实表格统计](TABLE_STATISTICS.md)。
+
+工作台导出的模板可通过 `check-template <csv|json> <原文件> <模板.json>` 检查兼容性，再通过 `publish-template <csv|json> <账本> <原文件> <模板.json> <请求编号> <新报告>` 发布。仍需显式指定受控账本和稳定请求编号，重试不更换编号。
 
 ## SDK
 

@@ -40,6 +40,14 @@ fn decode_ints(value : Json) -> Array[Int] raise KitError {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "parseStatisticsTemplate" =>
+      parse_statistics_template(decode(field(request, "input"))).to_json()
+    "checkStatisticsTemplate" =>
+      check_statistics_template(
+        parse_statistics_template(decode(field(request, "template"))),
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      ).to_json()
     "mapTable" =>
       map_table(
         decode(field(request, "format")),

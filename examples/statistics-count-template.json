@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "kind": "moonprivacykit/statistics-template",
+  "name": "参与人数统计",
+  "settings": {
+    "query": "count",
+    "unitField": "person_id",
+    "epsilon": "0.3",
+    "maxContributions": 1
+  }
+}

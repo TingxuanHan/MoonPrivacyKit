@@ -84,18 +84,24 @@
             <form id="stats-form">
               <fieldset id="stats-inputs" class="panel stats-inputs">
                 <div class="section-heading"><h2>2. 导入表格并设置统计</h2><button id="stats-example" type="button" class="text-button">载入统计示例</button></div>
+                <details id="stats-templates" class="template-tools"><summary>使用统计配置模板</summary>
+                  <p class="footnote">沿用字段、类别和保护参数。模板不包含原表或预算记录，应用后仍需核对并手动发布。</p>
+                  <div class="two-col"><label class="field">起步模板<select id="stats-template-preset"><option value="">选择一个模板</option><option value="count">参与人数统计</option><option value="histogram">满意度类别分布</option></select></label><label class="file-field">导入已保存的模板（JSON）<input id="stats-template-file" type="file" accept=".json,application/json"></label></div>
+                  <div id="stats-template-preview" class="template-preview" hidden><h3 id="stats-template-title"></h3><p id="stats-template-description" class="muted"></p><details id="stats-template-category-list" hidden><summary id="stats-template-category-summary">查看预设类别</summary><pre id="stats-template-category-values" tabindex="0" aria-label="模板的预设公开类别"></pre></details><p id="stats-template-check" role="status" aria-live="polite"></p><div class="button-row"><button id="stats-template-apply" type="button" class="secondary" disabled>应用此模板</button><button id="stats-template-dismiss" type="button" class="text-button">取消预览</button></div></div>
+                </details>
                 <label class="file-field">统计源文件（CSV 或 JSON）<input id="stats-file" type="file" accept=".csv,.json"></label><p id="stats-file-note" class="muted">选择文件后只显示列名，不预览个人记录。原文件保持不变。</p>
                 <div id="stats-settings" hidden>
                   <div class="two-col"><label class="field">统计内容<select id="stats-query"><option value="count">计数</option><option value="histogram">类别分布</option></select></label><label class="field">人员标识列<select id="stats-unit" required></select><span class="hint">同一人须使用稳定标识，不能用行号替代。</span></label></div>
                   <div id="stats-category-settings" class="two-col" hidden><label class="field">类别列<select id="stats-category"></select></label><label class="field">预设公开类别（每行一个）<textarea id="stats-categories" rows="3" maxlength="33024" placeholder="满意&#10;一般&#10;不满意"></textarea><span class="hint">发布前确定类别，不从私有数据自动提取；未出现的类别也会输出。</span></label></div>
                   <div class="two-col"><label class="field">每人最多贡献几条记录<input id="stats-cap" type="number" min="1" max="32" step="1" value="1" required><span class="hint">上限为 1 的计数估计不同人员数；超过 1 时统计裁剪后的记录数。</span></label><label class="field">本次使用预算 ε<input id="stats-epsilon" inputmode="decimal" value="0.3" required><span class="hint">0.01–8，最多六位小数。越小保护越强，误差通常越大。</span></label></div>
                   <p id="stats-estimate" class="help"></p>
+                  <details id="stats-template-save" class="template-save"><summary>保存当前统计配置</summary><div class="template-export"><label class="field">模板名称<input id="stats-template-name" maxlength="80" value="我的统计配置"></label><button id="stats-template-export" type="button" class="secondary">导出当前配置</button></div><p class="footnote">只导出统计设置。字段名和公开类别会包含在模板中，请用用途命名，避免填写个人信息。</p></details>
                   <p class="footnote">发布时，表格会发送到当前地址的本机服务。服务在可信持有者侧处理，保存受保护结果和累计预算；不保存原始表格。</p>
                 </div>
               </fieldset>
               <div id="stats-publish-actions" class="stats-actions" hidden><p id="stats-spend-note" class="muted">每次新发布都会累计消耗预算。请先核对字段与公开类别。</p><button id="stats-publish" class="primary" type="submit">生成报告</button></div>
             </form>
-            <div id="stats-complete" class="notice" hidden><p>本次报告已保存。重复查看和下载不消耗预算。</p><button id="stats-next" type="button" class="secondary">准备下一次发布</button></div>
+            <div id="stats-complete" class="notice" hidden><p>本次报告已保存。重复查看和下载不消耗预算。</p><div class="button-row"><button id="stats-next" type="button" class="secondary">准备下一次发布</button><button id="stats-template-complete" type="button" class="secondary">导出本次配置</button></div></div>
           </div>
           <section id="stats-history-view" class="panel" hidden><div class="section-heading"><h2>已保存的报告</h2><button id="stats-history-refresh" class="text-button" type="button">刷新历史</button></div><p class="footnote">此处仅读取已有结果，不重新采样，也不消耗预算。</p><div id="stats-history"></div><div class="button-row"><button id="stats-more" type="button" class="secondary" hidden>加载更早报告</button></div></section>
           <section id="stats-report" class="panel" tabindex="-1" aria-label="受保护统计报告" hidden></section>
