@@ -34,6 +34,8 @@ pub fn make_central_mechanism(Int, Double, Int) -> CentralMechanism raise KitErr
 
 pub fn make_mechanism(Int, Double) -> Mechanism raise KitError
 
+pub fn map_table(String, String, TableMapping) -> MappedTable raise KitError
+
 pub fn parse_csv(String) -> CsvTable raise KitError
 
 pub fn parse_response(String) -> ProtectedResponse raise KitError
@@ -125,6 +127,12 @@ pub(all) struct FieldPolicy {
 pub fn FieldPolicy::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn FieldPolicy::to_json(Self) -> Json
 
+pub struct MappedTable {
+  unit_ids : Array[String]
+  category_ids : Array[Int]
+} derive(ToJson)
+pub fn MappedTable::to_json(Self) -> Json
+
 pub struct Mechanism {
   categories : Int
   threshold : Int
@@ -202,6 +210,15 @@ pub struct SurveyReport {
   questions : Array[QuestionResult]
 } derive(ToJson)
 pub fn SurveyReport::to_json(Self) -> Json
+
+pub(all) struct TableMapping {
+  query : String
+  unit_field : String
+  category_field : String
+  categories : Array[String]
+} derive(ToJson, @json.FromJson)
+pub fn TableMapping::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn TableMapping::to_json(Self) -> Json
 
 // Type aliases
 

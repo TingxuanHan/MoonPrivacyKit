@@ -15,6 +15,7 @@ node cli/main.mjs redact <csv|json> <原文件> <新文件> <规则.json>
 node cli/main.mjs init-ledger <新账本.sqlite> <保护范围编号> <总epsilon>
 node cli/main.mjs ledger-status <账本.sqlite>
 node cli/main.mjs publish <账本.sqlite> <发布请求.json> <新报告.json>
+node cli/main.mjs publish-table <csv|json> <账本.sqlite> <原文件> <发布方案.json> <新报告.json>
 node cli/main.mjs export-release <账本.sqlite> <请求编号> <新报告.json>
 
 protect 在终端逐题询问；管道输入时接收选项下标数组（从 0 开始）。
@@ -23,8 +24,15 @@ protect 在终端逐题询问；管道输入时接收选项下标数组（从 0 
 账本保存在本地，不应公开。total epsilon 使用最多六位小数。
 examples/ 提供问卷、方案、脱敏规则与虚构数据。`;
 
-function readText(path) {
+function readText(path, strictUtf8 = false) {
   if (statSync(path).size > 4_000_000) throw new Error('Input file exceeds 4 MB.');
+  if (strictUtf8) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(path)); }
+    catch (error) {
+      if (error.code === 'ERR_ENCODING_INVALID_ENCODED_DATA') throw new Error('Input table must be valid UTF-8.');
+      throw error;
+    }
+  }
   return readFileSync(path, 'utf8').replace(/^\uFEFF/, '');
 }
 function readJson(path) {
@@ -57,6 +65,12 @@ async function main() {
     // Persistence precedes export. If writing fails, export-release can recover
     // the committed result without rerunning the mechanism or spending again.
     writeNew(args[2], result);
+  } else if (command === 'publish-table' && args.length === 5) {
+    const [format, ledger, input, plan, output] = args;
+    requireNew([output]);
+    const { publishTableRelease } = await import('../runtime/table.mjs');
+    const result = publishTableRelease(ledger, format, readText(input, true), readJson(plan));
+    writeNew(output, result);
   } else if (command === 'export-release' && args.length === 3) {
     requireNew([args[2]]);
     const { savedRelease } = await import('../runtime/ledger.mjs');

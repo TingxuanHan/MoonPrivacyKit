@@ -40,6 +40,12 @@ fn decode_ints(value : Json) -> Array[Int] raise KitError {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "mapTable" =>
+      map_table(
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+        decode(field(request, "mapping")),
+      ).to_json()
     "budgetState" =>
       make_budget_state(
         decode_int(field(request, "total_units")),

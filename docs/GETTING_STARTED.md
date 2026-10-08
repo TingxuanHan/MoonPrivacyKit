@@ -43,7 +43,7 @@ node cli/main.mjs plan examples/plan.json plan-report.json
 
 `protect` 在终端逐题询问。自动化管道可向其标准输入传入从 0 开始的选项下标数组；不要把真实回答放在命令行参数、共享日志或 Git 仓库中。脱敏会同时写入 `<输出文件>.audit.json`。使用 `private-data/` 和 `reports/` 目录可避免默认被 Git 跟踪，但仍需在提交前检查。
 
-中心化统计另提供 `init-ledger`、`publish`、`ledger-status` 和 `export-release` 命令，可完成创建预算、发布、查看余额与重试导出。完整命令和虚构数据示例见[发布预算与结果复用](RELEASE_LEDGER.md)。当前请求采用约定的 JSON 结构，尚未支持从任意业务表中直接选择统计字段。
+中心化统计另提供 `init-ledger`、`publish`、`publish-table`、`ledger-status` 和 `export-release` 命令，可完成创建预算、发布、查看余额与重试导出。`publish` 接收约定的 JSON 请求，`publish-table` 从 CSV／JSON 表中映射人员标识和类别字段。完整示例见[发布预算与结果复用](RELEASE_LEDGER.md)与[真实表格统计](TABLE_STATISTICS.md)。
 
 ## SDK
 

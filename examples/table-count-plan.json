@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "scope": "table-example",
+  "requestId": "participants-v1",
+  "query": "count",
+  "epsilon": "0.3",
+  "maxContributions": 1,
+  "unitField": "person_id"
+}

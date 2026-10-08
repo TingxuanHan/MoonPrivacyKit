@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "scope": "table-example",
+  "requestId": "answers-v1",
+  "query": "histogram",
+  "epsilon": "0.7",
+  "maxContributions": 1,
+  "unitField": "person_id",
+  "categoryField": "answer",
+  "categories": ["满意", "一般", "不满意"]
+}

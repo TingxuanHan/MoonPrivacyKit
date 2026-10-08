@@ -8,7 +8,7 @@ const commands = [
   ['moon', ['test', '--target', 'wasm']],
   ['moon', ['test', '--target', 'js']],
   [process.execPath, ['scripts/build.mjs']],
-  [process.execPath, ['--test', 'tests/runtime.test.mjs', 'tests/cli.test.mjs', 'tests/evaluation.test.mjs', 'tests/central.test.mjs', 'tests/ledger.test.mjs']],
+  [process.execPath, ['--test', 'tests/runtime.test.mjs', 'tests/cli.test.mjs', 'tests/evaluation.test.mjs', 'tests/central.test.mjs', 'tests/ledger.test.mjs', 'tests/table.test.mjs']],
 ];
 if (process.argv.includes('--ui')) commands.push([process.execPath, ['--test', 'tests/ui.test.mjs']]);
 for (const [command, args] of commands) {

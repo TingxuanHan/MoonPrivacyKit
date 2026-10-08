@@ -1,0 +1,6 @@
+[
+  { "person_id": "unit-001", "answer": "满意", "comment": "虚构样例" },
+  { "person_id": "unit-001", "answer": "一般", "comment": "同一人的重复记录" },
+  { "person_id": "unit-002", "answer": "一般", "comment": "虚构样例" },
+  { "person_id": "unit-003", "answer": "不满意", "comment": "虚构样例" }
+]

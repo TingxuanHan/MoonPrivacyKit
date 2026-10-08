@@ -18,7 +18,7 @@ node cli/main.mjs export-release private-data/october.sqlite participant-count-v
 
 两次发布分别消耗 0.3 和 0.7，剩余预算为 0。最后一条命令仍可导出第一次发布的原结果，两个计数报告的内容一致。新的发布请求会被拒绝。`ledger-status` 在终端显示账本范围、总预算、已用预算、剩余预算和发布次数，不输出原始数据或内部指纹。
 
-`publish` 接收约定结构的 JSON 请求，目前不直接读取任意 CSV／JSON 业务表。字段选择、人员标识映射及工作台报告流程是下一节点的工作。
+`publish` 接收约定结构的 JSON 请求。要直接读取 CSV／JSON 表格并配置人员标识和类别字段，使用新增的 `publish-table` 命令，详见[真实表格统计](TABLE_STATISTICS.md)。工作台报告流程是下一节点的工作。
 
 ## 请求配置
 
