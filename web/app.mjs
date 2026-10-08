@@ -1,4 +1,5 @@
 import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/runtime/client.mjs';
+import { initStatistics } from '/web/statistics.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -72,6 +73,7 @@ function activate(group, target, attribute) {
 }
 for (const button of $$('[data-view]')) button.addEventListener('click', () => activate('view', button.dataset.view, 'view'));
 for (const button of $$('[data-step]')) button.addEventListener('click', () => activate('step', button.dataset.step, 'step'));
+initStatistics({ callCore, element, download });
 
 let surveyId = `survey-${crypto.randomUUID().slice(0, 8)}`;
 function questionEditor(question, index) {

@@ -209,6 +209,25 @@ export function savedRelease(path, requestId) {
   return withLedger(path, false, (db, meta) => storedRelease(db.prepare('SELECT * FROM releases WHERE request_id = ?').get(requestId), meta));
 }
 
+export function listReleases(path, { offset = 0, limit = 20 } = {}) {
+  if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+    fail('INVALID_REQUEST', 'Choose a valid history offset and a page size between 1 and 100.');
+  }
+  return withLedger(path, false, (db, meta) => {
+    const total = summary(db, meta).release_count;
+    const rows = db.prepare('SELECT * FROM releases ORDER BY rowid DESC LIMIT ? OFFSET ?').all(limit, offset);
+    const items = rows.map(row => {
+      const result = storedRelease(row, meta);
+      return {
+        request_id: row.request_id, release_id: result.release_id,
+        query: result.report.query, epsilon: decimal(row.charge_units),
+        max_contributions: result.report.max_contributions, categories: result.categories,
+      };
+    });
+    return deepFreeze({ items, total, offset, has_more: offset + items.length < total });
+  });
+}
+
 export function publishRelease(path, input) {
   return guarded(() => {
     const request = normalizeRequest(input);

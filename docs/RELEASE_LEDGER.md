@@ -50,7 +50,9 @@ const remaining = ledgerStatus('private-data/project.sqlite');
 
 这些接口同步执行。返回的发布对象包含格式版本、随机发布编号、公开类别标签和上一节点的统计报告，不附带请求指纹、账本密钥、人员标识或精确计数。结果对象被冻结，可序列化保存。
 
-普通 `runtime/client.mjs` 中的 `centralCount` 和 `centralHistogram` 仍是无持久状态的核心适配器，不会自动访问账本。需要预算约束时应通过 `publishRelease` 调用。浏览器不能直接导入 Node.js 账本模块。
+普通 `runtime/client.mjs` 中的 `centralCount` 和 `centralHistogram` 仍是无持久状态的核心适配器，不会自动访问账本。需要预算约束时应通过 `publishRelease` 调用。浏览器不能直接导入 Node.js 账本模块；[统计工作台](LOCAL_WORKBENCH.md)通过受限本机 API 使用它。
+
+`listReleases(path, { offset: 0, limit: 20 })` 按最新保存顺序分页列出报告元信息，页大小为 1 至 100，默认 20。返回 `items`、`total`、`offset`、`has_more`；各条目包含请求与报告编号、查询类型、预算、贡献上限和公开类别，不返回私有输入。该只读操作验证结果完整性，不采样或扣减预算，完整报告仍通过 `savedRelease` 读取。分页期间发生新发布时，应重新载入首屏。
 
 ## 预算规则
 

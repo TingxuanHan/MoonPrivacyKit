@@ -16,7 +16,8 @@
       <button data-view="survey" aria-pressed="true"><span aria-hidden="true">01</span> 隐私问卷</button>
       <button data-view="redact" aria-pressed="false"><span aria-hidden="true">02</span> 文件脱敏</button>
       <button data-view="plan" aria-pressed="false"><span aria-hidden="true">03</span> 效果评估</button>
-    </nav><div class="sidebar-note">文件与回答在当前浏览器内处理。<br>刷新页面会清除未导出的内容。</div><div class="version">v0.1 · 本地预览版</div></aside>
+      <button data-view="statistics" aria-pressed="false"><span aria-hidden="true">04</span> 隐私统计</button>
+    </nav><div class="sidebar-note">文件在本机处理。隐私统计由本机服务保存报告和预算；原始表格不落盘。其他工具的未导出内容刷新后清除。</div><div class="version">v0.1 · 本地预览版</div></aside>
     <main id="workspace" tabindex="-1">
       <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
       <section id="view-survey" class="view">
@@ -62,6 +63,43 @@
           <div class="two-col"><label class="field">预计人数<input name="samples" type="number" min="1" max="10000000" step="1" value="1000" required></label><label class="field">目标误差（百分点）<input name="radius" type="number" min="0.01" max="99" step="any" value="5" required></label></div>
           <button class="primary full" type="submit">评估这个方案</button>
         </form><div id="plan-result" class="panel plan-result"><div class="empty-state"><span aria-hidden="true">±</span><h2>多少人，才能看清群体意见？</h2><p>填写左侧方案，查看误差范围和达到目标精度所需的人数。</p></div></div></div>
+      </section>
+      <section id="view-statistics" class="view" hidden>
+        <div class="page-heading"><div><p class="eyebrow">保留分析价值，保护个人信息</p><h1>隐私统计</h1><p>从真实表格生成受保护计数或类别分布，持续记录每次发布的预算。</p></div></div>
+        <div id="stats-notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <div class="panel">
+          <div class="section-heading"><h2>1. 选择统计项目</h2><button id="stats-refresh" class="text-button" type="button">刷新项目</button></div>
+          <label class="field">统计项目<select id="stats-project"><option value="">正在连接本机服务…</option></select></label>
+          <p class="footnote">可能涉及同一批人的发布应沿用同一项目。更换文件或新建项目不能重置已经消耗的隐私预算。</p>
+          <dl id="stats-budget" class="budget-strip" hidden></dl>
+          <details id="stats-new"><summary>新建统计项目</summary><form id="stats-create" class="create-project">
+            <div class="two-col"><label class="field">项目名称<input id="stats-name" maxlength="60" required placeholder="例如：秋季意见调查"></label><label class="field">项目总预算 ε<input id="stats-total" inputmode="decimal" value="1" required><span class="hint">0.01–1000，最多六位小数，创建后不可追加。</span></label></div>
+            <p class="footnote">名称不要包含个人信息；项目及受保护报告保存在本机。不要删除或回滚账本来恢复预算。</p><div class="button-row"><button class="secondary" type="submit">创建项目</button></div>
+          </form></details>
+        </div>
+        <div id="stats-workspace" hidden>
+          <nav class="subnav" aria-label="统计操作"><button id="stats-publish-tab" aria-pressed="true" type="button">发布统计</button><button id="stats-history-tab" aria-pressed="false" type="button">历史报告</button></nav>
+          <div id="stats-publish-view">
+            <div id="stats-pending" class="help pending-help" hidden><h2>上次发布尚待确认</h2><p id="stats-pending-message"></p><button id="stats-recover" type="button" class="secondary">恢复已保存报告</button></div>
+            <form id="stats-form">
+              <fieldset id="stats-inputs" class="panel stats-inputs">
+                <div class="section-heading"><h2>2. 导入表格并设置统计</h2><button id="stats-example" type="button" class="text-button">载入统计示例</button></div>
+                <label class="file-field">统计源文件（CSV 或 JSON）<input id="stats-file" type="file" accept=".csv,.json"></label><p id="stats-file-note" class="muted">选择文件后只显示列名，不预览个人记录。原文件保持不变。</p>
+                <div id="stats-settings" hidden>
+                  <div class="two-col"><label class="field">统计内容<select id="stats-query"><option value="count">计数</option><option value="histogram">类别分布</option></select></label><label class="field">人员标识列<select id="stats-unit" required></select><span class="hint">同一人须使用稳定标识，不能用行号替代。</span></label></div>
+                  <div id="stats-category-settings" class="two-col" hidden><label class="field">类别列<select id="stats-category"></select></label><label class="field">预设公开类别（每行一个）<textarea id="stats-categories" rows="3" maxlength="33024" placeholder="满意&#10;一般&#10;不满意"></textarea><span class="hint">发布前确定类别，不从私有数据自动提取；未出现的类别也会输出。</span></label></div>
+                  <div class="two-col"><label class="field">每人最多贡献几条记录<input id="stats-cap" type="number" min="1" max="32" step="1" value="1" required><span class="hint">上限为 1 的计数估计不同人员数；超过 1 时统计裁剪后的记录数。</span></label><label class="field">本次使用预算 ε<input id="stats-epsilon" inputmode="decimal" value="0.3" required><span class="hint">0.01–8，最多六位小数。越小保护越强，误差通常越大。</span></label></div>
+                  <p id="stats-estimate" class="help"></p>
+                  <p class="footnote">发布时，表格会发送到当前地址的本机服务。服务在可信持有者侧处理，保存受保护结果和累计预算；不保存原始表格。</p>
+                </div>
+              </fieldset>
+              <div id="stats-publish-actions" class="stats-actions" hidden><p id="stats-spend-note" class="muted">每次新发布都会累计消耗预算。请先核对字段与公开类别。</p><button id="stats-publish" class="primary" type="submit">生成报告</button></div>
+            </form>
+            <div id="stats-complete" class="notice" hidden><p>本次报告已保存。重复查看和下载不消耗预算。</p><button id="stats-next" type="button" class="secondary">准备下一次发布</button></div>
+          </div>
+          <section id="stats-history-view" class="panel" hidden><div class="section-heading"><h2>已保存的报告</h2><button id="stats-history-refresh" class="text-button" type="button">刷新历史</button></div><p class="footnote">此处仅读取已有结果，不重新采样，也不消耗预算。</p><div id="stats-history"></div><div class="button-row"><button id="stats-more" type="button" class="secondary" hidden>加载更早报告</button></div></section>
+          <section id="stats-report" class="panel" tabindex="-1" aria-label="受保护统计报告" hidden></section>
+        </div>
       </section>
       <footer>隐私保护有适用范围。统计误差不包含选择偏差或虚假回答；字段脱敏不等同于完全匿名。</footer>
     </main>

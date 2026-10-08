@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn, spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createLedger, publishRelease, savedRelease, ledgerStatus } from '../runtime/ledger.mjs';
+import { createLedger, publishRelease, savedRelease, ledgerStatus, listReleases } from '../runtime/ledger.mjs';
 import { callCore } from '../runtime/client.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -24,6 +24,36 @@ const query = (id, epsilon = '0.1') => ({
 });
 const code = expected => error => error.code === expected;
 const cli = args => spawnSync(process.execPath, ['cli/main.mjs', ...args], { cwd: root, encoding: 'utf8' });
+
+test('history paginates saved releases without spending budget or exposing private input', () => {
+  const path = book();
+  const first = publishRelease(path, query('oldest'));
+  publishRelease(path, query('newest'));
+  const before = ledgerStatus(path);
+  const page = listReleases(path, { limit: 1 });
+  assert.equal(page.total, 2);
+  assert.equal(page.has_more, true);
+  assert.equal(page.items[0].request_id, 'newest');
+  const next = listReleases(path, { offset: 1, limit: 1 });
+  assert.equal(next.items[0].release_id, first.release_id);
+  assert.equal(next.has_more, false);
+  assert.deepEqual(listReleases(path, { offset: 2 }).items, []);
+  assert.deepEqual(ledgerStatus(path), before);
+  assert.ok(!JSON.stringify(page).includes('sensitive-person'));
+  assert.ok(Object.isFrozen(page.items[0]));
+  for (const options of [{ offset: -1 }, { limit: 0 }, { limit: 101 }, { offset: .5 }]) {
+    assert.throws(() => listReleases(path, options), code('INVALID_REQUEST'));
+  }
+});
+
+test('history rejects corrupted reports instead of displaying unverified metadata', () => {
+  const path = book();
+  publishRelease(path, query('a'));
+  const db = new DatabaseSync(path);
+  db.prepare('UPDATE releases SET result_json = ?').run('{}');
+  db.close();
+  assert.throws(() => listReleases(path), code('INVALID_LEDGER'));
+});
 
 test('persistent decimal budgets compose exactly and refuse exhaustion before sampling', () => {
   const path = book('0.3');
