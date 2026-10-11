@@ -158,7 +158,7 @@ fn formula_like(value : String) -> Bool {
 
 ///|
 fn csv_quote(value : String) -> String {
-  "\"" + value.replace(old="\"", new="\"\"") + "\""
+  "\"" + value.replace_all(old="\"", new="\"\"") + "\""
 }
 
 ///|

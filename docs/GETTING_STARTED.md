@@ -24,6 +24,8 @@
 
 首版每个文件上限 4 MB；核心文本处理上限 200 万文本单位、10 万记录和 512 个不同字段。工作台一次汇总最多 10,000 个响应文件、合计 8 MB。超过范围时应缩小输入；当前没有流式处理。
 
+字段规则可导出为模板，下次检查列名后应用。模板必须覆盖全部列名；新增或缺少字段时先复核。工作台字段名最多 256 个文本单位，JSON 输入中的重复键被拒绝。处理结果可直接“用此结果继续统计”，只允许选择保持原样的列，转入不发布、不重置预算。操作步骤及边界见[字段配置与统计衔接](FIELD_WORKFLOWS.md)。
+
 ### 效果评估
 
 输入预计人数、选项数、题目数量、ε 和期望误差。工作台展示每次采集的精度及每人跨多次采集的累计开销，不把多次采集自动当成更多独立参与者。当前页面假设每题选项数、ε 相同，MoonBit 的 `plan_survey` 接口支持各题使用不同配置。
@@ -49,6 +51,8 @@ node cli/main.mjs protect my-survey.json response-1.json
 node cli/main.mjs aggregate my-survey.json report.json response-1.json
 node cli/main.mjs redact csv examples/sample.csv clean.csv examples/policy.json
 node cli/main.mjs redact json examples/sample.json clean.json examples/policy.json
+node cli/main.mjs check-redaction-template csv examples/redaction-table.csv examples/redaction-template.json
+node cli/main.mjs redact-template csv examples/redaction-table.csv processed.csv examples/redaction-template.json
 node cli/main.mjs plan examples/plan.json plan-report.json
 ```
 

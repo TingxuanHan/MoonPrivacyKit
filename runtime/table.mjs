@@ -1,6 +1,6 @@
 import { callCore } from './client.mjs';
 import { publishRelease, ledgerStatus } from './ledger.mjs';
-import { parseStatisticsTemplate } from './templates.mjs';
+import { parseStatisticsTemplate, parseRedactionTemplate, prepareRedactionHandoff } from './templates.mjs';
 
 function invalid() {
   throw new Error('Invalid table plan. Use schemaVersion 1, a count or histogram query, and only the documented fields.');
@@ -55,4 +55,16 @@ export function publishTemplateRelease(ledgerPath, format, input, templateText, 
   return publishTableRelease(ledgerPath, format, input, {
     ...template.settings, schemaVersion: 1, scope: ledgerStatus(ledgerPath).scope, requestId,
   });
+}
+
+// Recompute provenance from the source and rules; never trust imported claims
+// that a masked/escaped column still represents the original people or labels.
+export function publishRedactedRelease(ledgerPath, format, input, redactionText, statisticsText, requestId) {
+  const processed = prepareRedactionHandoff(parseRedactionTemplate(redactionText), format, input);
+  const plan = parseStatisticsTemplate(statisticsText).settings;
+  const required = [plan.unitField, ...(plan.query === 'histogram' ? [plan.categoryField] : [])];
+  if (required.some(field => !processed.eligible_fields.includes(field))) {
+    throw new Error('Statistics require unchanged fields. Review the redaction rules or use the original table in the trusted environment.');
+  }
+  return publishTemplateRelease(ledgerPath, format, processed.result.output, statisticsText, requestId);
 }

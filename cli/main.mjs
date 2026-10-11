@@ -12,6 +12,8 @@ node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs protect <问卷.json> <新回答.json>
 node cli/main.mjs aggregate <问卷.json> <新报告.json> <回答.json>...
 node cli/main.mjs redact <csv|json> <原文件> <新文件> <规则.json>
+node cli/main.mjs check-redaction-template <csv|json> <原文件> <模板.json>
+node cli/main.mjs redact-template <csv|json> <原文件> <新文件> <模板.json>
 node cli/main.mjs init-ledger <新账本.sqlite> <保护范围编号> <总epsilon>
 node cli/main.mjs ledger-status <账本.sqlite>
 node cli/main.mjs publish <账本.sqlite> <发布请求.json> <新报告.json>
@@ -125,6 +127,20 @@ async function main() {
   } else if (command === 'aggregate' && args.length >= 3) {
     requireNew([args[1]]);
     writeNew(args[1], await aggregateResponses(readJson(args[0]), args.slice(2).map(readJson)));
+  } else if (command === 'check-redaction-template' && args.length === 3) {
+    const { parseRedactionTemplate, checkRedactionTemplate } = await import('../runtime/templates.mjs');
+    const result = checkRedactionTemplate(parseRedactionTemplate(readText(args[2], true)), args[0], readText(args[1], true));
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.compatible) process.exitCode = 1;
+    return;
+  } else if (command === 'redact-template' && args.length === 4) {
+    const [format, input, output, templatePath] = args;
+    const auditPath = `${output}.audit.json`;
+    requireNew([output, auditPath]);
+    const { parseRedactionTemplate, applyRedactionTemplate } = await import('../runtime/templates.mjs');
+    const result = applyRedactionTemplate(parseRedactionTemplate(readText(templatePath, true)), format, readText(input, true));
+    writeNew(output, result.output);
+    writeNew(auditPath, result.audit);
   } else if (command === 'redact' && args.length === 4) {
     const [format, input, output, policyPath] = args;
     const auditPath = `${output}.audit.json`;

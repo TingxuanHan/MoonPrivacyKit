@@ -158,6 +158,26 @@ fn execute_request(request : Json) -> Json raise KitError {
         responses,
       ).to_json()
     }
+    "parseRedactionTemplate" =>
+      parse_redaction_template(decode(field(request, "input"))).to_json()
+    "checkRedactionTemplate" =>
+      check_redaction_template(
+        parse_redaction_template(decode(field(request, "template"))),
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      ).to_json()
+    "applyRedactionTemplate" =>
+      apply_redaction_template(
+        parse_redaction_template(decode(field(request, "template"))),
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      ).to_json()
+    "prepareRedactionHandoff" =>
+      prepare_redaction_handoff(
+        parse_redaction_template(decode(field(request, "template"))),
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      ).to_json()
     "inspect" =>
       inspect_fields(
         decode(field(request, "format")),

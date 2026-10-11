@@ -80,6 +80,7 @@ export function createWorkbenchServer({ root, dataDir }) {
     ['/', ['web/index.html', 'text/html; charset=utf-8']],
     ['/web/app.mjs', ['web/app.mjs', 'text/javascript; charset=utf-8']],
     ['/web/statistics.mjs', ['web/statistics.mjs', 'text/javascript; charset=utf-8']],
+    ['/web/redaction.mjs', ['web/redaction.mjs', 'text/javascript; charset=utf-8']],
     ['/web/style.css', ['web/style.css', 'text/css; charset=utf-8']],
     ['/runtime/client.mjs', ['runtime/client.mjs', 'text/javascript; charset=utf-8']],
     ['/runtime/templates.mjs', ['runtime/templates.mjs', 'text/javascript; charset=utf-8']],

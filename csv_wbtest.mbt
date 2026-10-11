@@ -8,6 +8,17 @@ test "CSV preserves Unicode commas quotes embedded newlines and empty final cell
 }
 
 ///|
+test "CSV exports escape every quote in both column names and kept values" {
+  let source = "private,\"id\"\"quoted\"\"\",note\nsecret,\"person\"\"one\"\"\",\"said \"\"yes\"\", then \"\"no\"\"\nnext\""
+  let original = parse_csv(source)
+  let processed = parse_csv(
+    redact_csv(source, { remove: ["private"], mask: [], }).output,
+  )
+  assert_eq(processed.headers, [original.headers[1], original.headers[2]])
+  assert_eq(processed.rows, [[original.rows[0][1], original.rows[0][2]]])
+}
+
+///|
 test "CSV rejects malformed rows and ambiguous headers" {
   for
     input in [

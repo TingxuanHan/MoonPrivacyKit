@@ -18,3 +18,20 @@ export function createStatisticsTemplate(name, settings) {
 export function checkStatisticsTemplate(template, format, input) {
   return freeze(callCore({ op: 'checkStatisticsTemplate', template: JSON.stringify(template), format, input: input.replace(/^\uFEFF/, '') }));
 }
+
+export function parseRedactionTemplate(input) {
+  if (typeof input !== 'string') throw new Error('Redaction templates must be JSON text.');
+  return freeze(callCore({ op: 'parseRedactionTemplate', input: input.replace(/^\uFEFF/, '') }));
+}
+
+export function createRedactionTemplate(name, settings) {
+  return parseRedactionTemplate(JSON.stringify({ schemaVersion: 1, kind: 'moonprivacykit/redaction-template', name, settings }));
+}
+
+function redactionOperation(op, template, format, input) {
+  return freeze(callCore({ op, template: JSON.stringify(template), format, input: input.replace(/^\uFEFF/, '') }));
+}
+
+export const checkRedactionTemplate = (template, format, input) => redactionOperation('checkRedactionTemplate', template, format, input);
+export const applyRedactionTemplate = (template, format, input) => redactionOperation('applyRedactionTemplate', template, format, input);
+export const prepareRedactionHandoff = (template, format, input) => redactionOperation('prepareRedactionHandoff', template, format, input);

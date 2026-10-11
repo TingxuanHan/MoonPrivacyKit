@@ -1,5 +1,6 @@
 import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/runtime/client.mjs';
 import { initStatistics } from '/web/statistics.mjs';
+import { initRedaction } from '/web/redaction.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -73,7 +74,10 @@ function activate(group, target, attribute) {
 }
 for (const button of $$('[data-view]')) button.addEventListener('click', () => activate('view', button.dataset.view, 'view'));
 for (const button of $$('[data-step]')) button.addEventListener('click', () => activate('step', button.dataset.step, 'step'));
-initStatistics({ callCore, element, download });
+const statistics = initStatistics({ callCore, element, download });
+initRedaction({ callCore, element, download, notice, statistics, openStatistics: () => {
+  const button = $('[data-view="statistics"]'); button.click(); button.focus();
+} });
 
 let surveyId = `survey-${crypto.randomUUID().slice(0, 8)}`;
 function questionEditor(question, index) {
@@ -158,48 +162,6 @@ $('#collect-form').addEventListener('submit', event => { event.preventDefault();
   content.push(element('p', { class: 'footnote', text: '比例是经随机化校正的估计值，展示时限制在 0–100%；各选项展示值之和可能不等于 100%。误差范围不覆盖选择偏差和虚假回答。' }));
   $('#collect-result').replaceChildren(...content); $('#collect-result').hidden = false;
 }, event.submitter); });
-
-let redactionInput = null, redactionResult = null, redactGeneration = 0;
-function invalidateRedaction() { redactionResult = null; $('#redact-result').hidden = true; }
-function prepareRedaction(format, text, filename) {
-  const fields = callCore({ op: 'inspect', format, input: text });
-  redactionInput = { format, text };
-  $('#redact-filename').textContent = filename;
-  $('#field-policies').replaceChildren(...fields.map((name, i) => {
-    const select = element('select', { id: `field-policy-${i}`, 'data-key': name }, [['keep', '保留'], ['remove', '删除'], ['mask', '遮盖']].map(([value, text]) => element('option', { value, text })));
-    return element('div', { class: 'policy-row' }, [element('label', { htmlFor: select.id, text: name }), select]);
-  }));
-  $('#spreadsheet-label').hidden = format !== 'csv';
-  $('#spreadsheet-label').nextElementSibling.hidden = format !== 'csv';
-  $('#redact-form').hidden = false;
-}
-$('#redact-file').addEventListener('change', () => guarded(async () => {
-  const ticket = ++redactGeneration;
-  invalidateRedaction(); redactionInput = null; $('#redact-form').hidden = true;
-  const file = $('#redact-file').files[0];
-  const text = await fileText(file);
-  if (ticket !== redactGeneration) return;
-  const format = file.name.toLowerCase().endsWith('.csv') ? 'csv' : 'json';
-  prepareRedaction(format, text, file.name);
-}));
-$('#redact-example').addEventListener('click', () => guarded(() => {
-  redactGeneration++; invalidateRedaction();
-  prepareRedaction('csv', 'name,email,group,score\n示例甲,first@example.test,A,4\n示例乙,second@example.test,B,3', '虚构示例.csv');
-  const selects = $$('#field-policies select'); selects[0].value = 'remove'; selects[1].value = 'mask';
-}));
-$('#redact-form').addEventListener('change', invalidateRedaction);
-$('#redact-form').addEventListener('submit', event => { event.preventDefault(); guarded(() => {
-  invalidateRedaction();
-  const policy = { remove: [], mask: [] };
-  for (const select of $$('#field-policies select')) if (select.value !== 'keep') policy[select.value].push(select.dataset.key);
-  redactionResult = callCore({ op: 'redact', format: redactionInput.format, input: redactionInput.text, policy, spreadsheet_safe: $('#spreadsheet-safe').checked });
-  const audit = redactionResult.audit;
-  $('#redact-summary').textContent = `共 ${audit.records} 条记录 · 删除 ${audit.removed_values} 处 · 遮盖 ${audit.masked_values} 处 · 公式文本化 ${audit.spreadsheet_escapes} 处`;
-  $('#redact-preview').textContent = redactionResult.output.slice(0, 8000);
-  $('#redact-result').hidden = false;
-}, event.submitter); });
-$('#download-redacted').addEventListener('click', () => { if (redactionResult) download(`redacted.${redactionInput.format}`, redactionResult.output, redactionInput.format === 'csv' ? 'text/csv' : 'application/json'); });
-$('#download-audit').addEventListener('click', () => { if (redactionResult) download('processing-record.json', redactionResult.audit); });
 
 function metric(label, value, note) { return element('div', { class: 'metric' }, [element('span', { class: 'metric-label', text: label }), element('div', { class: 'metric-value', text: value }), element('p', { class: 'metric-note', text: note })]); }
 $('#plan-form').addEventListener('input', () => { $('#plan-result').replaceChildren(element('div', { class: 'empty-state' }, [element('h2', { text: '方案已修改' }), element('p', { text: '点击“评估这个方案”更新结果。' })])); });

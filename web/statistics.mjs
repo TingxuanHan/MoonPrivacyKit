@@ -10,6 +10,7 @@ export function initStatistics({ callCore, element, download }) {
   let loaded = false, busy = false, token = '', selected = '', projects = [];
   let table = null, pending = null, snapshot = null, completed = false, historyOffset = 0;
   let templatePreview = null, templateCheck = null;
+  let eligibleFields = null;
   try {
     selected = sessionStorage.getItem(SELECTED) || '';
     const saved = JSON.parse(sessionStorage.getItem(PENDING) || 'null');
@@ -178,7 +179,11 @@ export function initStatistics({ callCore, element, download }) {
       if (categories.length < 1 || categories.length > 256 || categories.some(c => !c.trim() || c.length > 128) || new Set(categories).size !== categories.length) invalid('请填写 1 至 256 个不重复的公开类别，每行一个，不能有空行，每个最多 128 个字符。');
       Object.assign(plan, { categoryField: $('category').value, categories });
     }
+    if (blockedColumns(plan).length) invalid('所选列已被字段处理改写。请使用保持原样的人员标识和类别，或在可信环境中用原表统计。');
     return plan;
+  }
+  function blockedColumns(plan) {
+    return eligibleFields ? [plan.unitField, ...(plan.query === 'histogram' ? [plan.categoryField] : [])].filter(f => f && !eligibleFields.includes(f)) : [];
   }
   function estimate() {
     const histogram = $('query').value === 'histogram';
@@ -191,17 +196,21 @@ export function initStatistics({ callCore, element, download }) {
     } catch (error) { $('estimate').textContent = error.publicMessage || '请检查保护参数后再发布。'; }
     sync();
   }
-  function loadTable(name, input, format, example = false) {
+  function loadTable(name, input, format, example = false, source = null) {
     table = null; $('settings').hidden = true; $('report').hidden = true;
     let fields;
     try { fields = callCore({ op: 'inspect', format, input }); }
     catch { invalid('无法读取表格，请检查 UTF-8 编码、唯一的列名和 CSV／JSON 结构。'); }
+    eligibleFields = source ? [...source.eligible_fields] : null;
+    if (eligibleFields) fields = fields.filter(f => eligibleFields.includes(f));
     if (!fields.length) invalid('没有可选择的列。空数据请使用保留表头的 CSV；JSON 需包含字段定义。');
     const oldUnit = $('unit').value, oldCategory = $('category').value;
     for (const control of [$('unit'), $('category')]) control.replaceChildren(element('option', { value: '', text: '请选择列' }), ...fields.map(f => element('option', { value: f, text: f })));
     $('unit').value = fields.includes(oldUnit) ? oldUnit : '';
     $('category').value = fields.includes(oldCategory) ? oldCategory : '';
     table = { input, format };
+    $('source').hidden = !source;
+    $('source-fields').textContent = source ? `可选字段：${fields.join('、')}\n已删除或改写，不能选择：${source.excluded_fields.join('、') || '无'}` : '';
     $('file-note').textContent = `已载入：${name}。只显示列名，原始记录仅用于本机统计。`;
     $('settings').hidden = false;
     if (example) {
@@ -224,8 +233,11 @@ export function initStatistics({ callCore, element, download }) {
     let result = '先选择统计源文件，再检查这个模板能否使用。';
     if (table) {
       try {
-        templateCheck = checkStatisticsTemplate(templatePreview, table.format, table.input);
+        const blocked = blockedColumns(plan);
+        templateCheck = blocked.length ? { compatible: false, issue: 'changed_fields', missing_fields: blocked }
+          : checkStatisticsTemplate(templatePreview, table.format, table.input);
         result = templateCheck.compatible ? '字段与记录校验通过。应用后请核对列的含义和人员标识，确认适合本次任务。'
+          : templateCheck.issue === 'changed_fields' ? `模板要求已删除或改写的列：${blocked.join('、')}。请改用保持原样的列，或在可信环境中用原表统计。`
           : templateCheck.issue === 'missing_fields' ? `缺少模板所需字段：${templateCheck.missing_fields.join('、')}。请选择匹配的文件，或取消预览后手动设置。`
           : '表格记录与模板不兼容。请检查人员标识、字段类型或预设类别；当前设置保持不变。';
       } catch { result = '无法检查这份表格，请检查格式和大小，或重新选择文件。'; }
@@ -263,6 +275,7 @@ export function initStatistics({ callCore, element, download }) {
   });
   $('file').addEventListener('change', () => run(async () => {
     table = null; $('settings').hidden = true; $('report').hidden = true; $('file-note').textContent = '未载入有效文件，请选择符合要求的 CSV 或 JSON。';
+    eligibleFields = null; $('source').hidden = true;
     previewTemplate();
     const file = $('file').files[0];
     if (!file || file.size > 4_000_000) invalid('请选择不超过 4 MB 的 CSV 或 JSON 文件。');
@@ -352,4 +365,16 @@ export function initStatistics({ callCore, element, download }) {
   $('history-tab').addEventListener('click', () => { tab(true); run(() => history()); });
   $('history-refresh').addEventListener('click', () => run(() => history()));
   $('more').addEventListener('click', () => run(() => history(true)));
+  return {
+    acceptRedaction({ format, handoff }) {
+      if (busy || (pending && snapshot)) return { ok: false, message: '隐私统计正在处理或等待确认一次发布。请先恢复该报告，再转入新的结果。' };
+      if (completed) return { ok: false, message: '上一份报告已保存。请先在“隐私统计”点击“准备下一次发布”，再转入本次结果。' };
+      if (!handoff?.eligible_fields.length) return { ok: false, message: '没有保持原样的字段可用于统计，请调整字段处理规则。' };
+      try {
+        loadTable(`字段处理结果.${format}`, handoff.result.output, format, false, handoff);
+        $('file').value = ''; tab(false);
+        return { ok: true };
+      } catch { return { ok: false, message: '处理结果无法载入统计。请检查结果格式和可用字段后重新处理。' }; }
+    },
+  };
 }

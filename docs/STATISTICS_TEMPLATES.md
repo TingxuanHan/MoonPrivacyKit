@@ -81,4 +81,4 @@ const report = publishTemplateRelease('private-data/template-example.sqlite', 'c
 
 `parseStatisticsTemplate` 接受原始文本，以便发现重复键；返回冻结对象。`createStatisticsTemplate` 仅接受模板名称和统计设置，拒绝额外的发布身份或原始数据字段。`checkStatisticsTemplate` 不访问账本或随机源，只在内存中校验数据，不返回人员标识、实际人数或明细。
 
-MoonBit 对应入口为 `parse_statistics_template` 和 `check_statistics_template`，JSON 边界操作为 `parseStatisticsTemplate`、`checkStatisticsTemplate`。这一节点实现单个统计工具内的配置复用；字段脱敏、问卷和多方协作的通用配置转换仍需独立设计，不能把类型不同的配置直接相互导入。
+MoonBit 对应入口为 `parse_statistics_template` 和 `check_statistics_template`，JSON 边界操作为 `parseStatisticsTemplate`、`checkStatisticsTemplate`。字段处理另有[独立模板和统计衔接](FIELD_WORKFLOWS.md)：转入统计时，被删除或改写的字段不能通过统计模板重新选用。两种配置不可混用；问卷、多方协作等通用配置转换仍需独立设计。

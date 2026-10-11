@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "moonprivacykit/redaction-template",
+  "name": "保留统计字段并移除联系方式",
+  "settings": {
+    "fields": [
+      { "name": "person_id", "action": "keep" },
+      { "name": "answer", "action": "keep" },
+      { "name": "contact", "action": "remove" }
+    ],
+    "spreadsheetSafe": true
+  }
+}

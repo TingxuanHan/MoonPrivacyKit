@@ -77,14 +77,14 @@ test('redaction preview, exports and stale-result invalidation work without uplo
   const result = await saveDownload(() => page.getByRole('button', { name: '下载处理后文件' }).click(), 'redacted.csv');
   assert.ok(!readFileSync(result, 'utf8').includes('示例甲'));
   const audit = await saveDownload(() => page.getByRole('button', { name: '下载处理记录' }).click(), 'audit.json');
-  assert.equal(JSON.parse(readFileSync(audit)).removed_values, 2);
+  assert.equal(JSON.parse(readFileSync(audit)).removed_values, 3);
   await page.screenshot({ path: join(artifacts, 'redaction-desktop.png'), fullPage: true });
-  await page.locator('#field-policy-0').selectOption('keep');
-  assert.equal(await page.locator('#redact-result').isVisible(), false);
   await page.locator('#field-policy-1').selectOption('keep');
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  await page.locator('#field-policy-2').selectOption('keep');
   await page.getByRole('button', { name: '处理并预览' }).click();
   await page.getByRole('alert').waitFor();
-  assert.match(await page.getByRole('alert').innerText(), /至少选择一个/);
+  assert.match(await page.getByRole('alert').innerText(), /至少.*一列/);
 });
 
 test('malformed imports and hostile labels recover with safe text rendering', async () => {
@@ -451,5 +451,161 @@ test('template reuse during interrupted recovery retains the original request ID
   await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
   assert.equal(retried, requestId);
   assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.4', '0.6', '1', '2']);
+  assert.deepEqual(errors, []); assert.deepEqual(external, []);
+});
+
+async function redactIdle() {
+  await page.waitForFunction(() => !document.getElementById('redact-template-file').disabled);
+}
+const redactionRows = [{ person_id: 'private-p1', answer: '满意', contact: 'secret-contact' }, { person_id: 'private-p1', answer: '一般', contact: 'secret-contact' }, { person_id: 'private-p2', answer: '不满意', contact: 'secret-contact' }];
+const redactionCsv = 'person_id,answer,contact\nprivate-p1,满意,secret-contact\nprivate-p1,一般,secret-contact\nprivate-p2,不满意,secret-contact';
+const fieldControl = name => page.locator(`#field-policies select[data-key="${name}"]`);
+async function redactSource(text = redactionCsv) {
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-file').setInputFiles({ name: 'source.csv', mimeType: 'text/csv', buffer: Buffer.from(text) }); await redactIdle();
+  await fieldControl('contact').selectOption('remove');
+}
+async function processRedaction() {
+  await page.getByRole('button', { name: '处理并预览', exact: true }).click(); await redactIdle();
+  await page.locator('#redact-result').waitFor({ state: 'visible' });
+}
+let exportedRedactionPath;
+
+test('field rules export and import across CSV JSON with explicit preview and keyboard access', async () => {
+  await page.reload(); await page.setViewportSize({ width: 1365, height: 1000 });
+  await redactSource();
+  await page.locator('#redact-template-save > summary').click();
+  await page.locator('#redact-template-name').fill('联系信息处理配置');
+  await page.locator('#redact-template-name').focus(); await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'redact-template-export');
+  exportedRedactionPath = await saveDownload(() => page.locator('#redact-template-export').click(), 'redaction-template.json'); await redactIdle();
+  const config = JSON.parse(readFileSync(exportedRedactionPath));
+  assert.deepEqual(config.settings.fields.map(f => f.action), ['keep', 'keep', 'remove']);
+  assert.ok(!readFileSync(exportedRedactionPath, 'utf8').includes('secret-contact'));
+  await page.reload();
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-templates > summary').click();
+  await page.locator('#redact-template-file').setInputFiles(exportedRedactionPath); await redactIdle();
+  assert.equal(await page.locator('#redact-template-apply').isEnabled(), false);
+  await page.locator('#redact-file').setInputFiles({ name: 'equivalent.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(redactionRows)) }); await redactIdle();
+  assert.equal(await page.locator('#redact-template-apply').isEnabled(), true);
+  assert.equal(await fieldControl('contact').inputValue(), 'keep');
+  await page.locator('#redact-template-apply').click(); await redactIdle();
+  assert.equal(await fieldControl('contact').inputValue(), 'remove');
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  await processRedaction();
+  const output = await saveDownload(() => page.locator('#download-redacted').click(), 'field-reuse.json');
+  assert.deepEqual(JSON.parse(readFileSync(output)), redactionRows.map(({ person_id, answer }) => ({ person_id, answer })));
+  assert.equal(await page.locator('#redact-to-statistics').isEnabled(), true);
+  await page.screenshot({ path: join(artifacts, 'redaction-templates-desktop.png'), fullPage: true });
+});
+
+test('new fields and malformed templates require review while preserving current field decisions', async () => {
+  await redactSource('person_id,answer,contact,phone\np,满意,secret-contact,secret-phone');
+  await fieldControl('contact').selectOption('mask');
+  assert.equal(await page.locator('#redact-template-apply').isEnabled(), false);
+  assert.match(await page.locator('#redact-template-check').innerText(), /新增字段尚未配置：phone/);
+  const config = JSON.parse(readFileSync(exportedRedactionPath));
+  for (const contents of [JSON.stringify({ ...config, schemaVersion: 99 }), JSON.stringify(config).replace('"action":"keep"', '"action":"keep","action":"remove"'), Buffer.from([0xff])]) {
+    await page.locator('#redact-template-file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(contents) }); await redactIdle();
+    assert.equal(await fieldControl('contact').inputValue(), 'mask');
+    assert.equal(await page.locator('#redact-template-preview').isVisible(), false);
+    assert.equal(await page.locator('#redact-template-apply').isEnabled(), false);
+  }
+  const hostile = { ...config, name: '<img src=x onerror=alert(1)>' + '较长配置名称'.repeat(7) };
+  await page.locator('#redact-template-file').setInputFiles({ name: 'template.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(hostile)) }); await redactIdle();
+  assert.equal(await page.locator('#redact-template-preview img').count(), 0);
+  assert.equal(await page.locator('#redact-template-title').innerText(), hostile.name);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'redaction-templates-mobile-review.png'), fullPage: true });
+  await page.locator('#redact-template-dismiss').click();
+  await page.locator('#redact-file').setInputFiles({ name: 'invalid.csv', mimeType: 'text/csv', buffer: Buffer.from([0xff]) }); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /UTF-8/);
+  assert.equal(await page.locator('#redact-form').isVisible(), false);
+});
+
+test('processed data transfers to statistics without upload or budget reset and stays an independent snapshot', async () => {
+  await page.setViewportSize({ width: 1365, height: 1000 });
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await statsProject('字段衔接测试');
+  const publications = [];
+  const onRequest = request => { if (request.url().endsWith('/publish')) publications.push(request.postDataJSON()); };
+  page.on('request', onRequest);
+  await redactSource(); await processRedaction();
+  await page.locator('#redact-to-statistics').click(); await redactIdle(); await statsIdle();
+  assert.equal(await page.locator('#stats-source').isVisible(), true);
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.view), 'statistics');
+  assert.deepEqual(await page.locator('#stats-unit option').allTextContents(), ['请选择列', 'person_id', 'answer']);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['1', '0', '1', '0']);
+  assert.equal(publications.length, 0);
+  await page.locator('#stats-templates > summary').click();
+  await page.locator('#stats-template-preset').selectOption('histogram'); await statsIdle();
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  // Editing the source tool must not silently mutate an already accepted table.
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await fieldControl('person_id').selectOption('mask');
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  await processRedaction();
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  assert.equal(await page.locator('#stats-unit').inputValue(), 'person_id');
+  await page.locator('#stats-source summary').click();
+  await page.screenshot({ path: join(artifacts, 'redaction-handoff-desktop.png'), fullPage: true });
+  await page.locator('#stats-publish').click();
+  await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
+  assert.equal(publications.length, 1);
+  assert.ok(!publications[0].input.includes('secret-contact') && !publications[0].input.includes('[REDACTED]'));
+  assert.match(publications[0].input, /private-p1/);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.7', '0.3', '1', '1']);
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-to-statistics').click(); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /准备下一次发布/);
+  page.off('request', onRequest);
+});
+
+test('changed fields cannot reenter statistics through templates and interrupted handoffs reuse the same request', async () => {
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await page.locator('#stats-next').click();
+  // Both masking and formula escaping must exclude an identifier, even if it remains a valid string.
+  for (const escaped of [false, true]) {
+    await redactSource(escaped ? redactionCsv.replace('private-p2', '=private-p2') : redactionCsv);
+    if (!escaped) await fieldControl('person_id').selectOption('mask');
+    await processRedaction();
+    await page.locator('#redact-to-statistics').click(); await redactIdle(); await statsIdle();
+    assert.deepEqual(await page.locator('#stats-unit option').allTextContents(), ['请选择列', 'answer']);
+    assert.equal(await page.locator('#stats-template-apply').isEnabled(), false);
+    assert.match(await page.locator('#stats-template-check').innerText(), /已删除或改写的列：person_id/);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'redaction-handoff-mobile-blocked.png'), fullPage: true });
+  await redactSource(); await fieldControl('person_id').selectOption('mask'); await fieldControl('answer').selectOption('remove');
+  await processRedaction();
+  assert.equal(await page.locator('#redact-to-statistics').isEnabled(), false);
+  await redactSource(); await processRedaction();
+  await page.locator('#redact-to-statistics').click(); await redactIdle(); await statsIdle();
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  let requestId;
+  await page.route('**/publish', async route => { requestId = route.request().postDataJSON().plan.requestId; await route.abort('failed'); }, { times: 1 });
+  await page.locator('#stats-publish').click(); await statsIdle();
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-to-statistics').click(); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /等待确认/);
+  assert.equal(JSON.parse(await page.evaluate(() => sessionStorage.getItem('mpk.statistics.pending.v1'))).requestId, requestId);
+  await page.reload();
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  assert.equal(await page.locator('#stats-source').isVisible(), false);
+  await redactSource(); await processRedaction();
+  await page.locator('#redact-to-statistics').click(); await redactIdle(); await statsIdle();
+  await page.locator('#stats-templates > summary').click();
+  await page.locator('#stats-template-preset').selectOption('histogram'); await statsIdle();
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  let retry;
+  await page.route('**/publish', async route => { retry = route.request().postDataJSON().plan.requestId; await route.continue(); }, { times: 1 });
+  await page.locator('#stats-publish').click();
+  await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
+  assert.equal(retry, requestId);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.4', '0.6', '1', '2']);
+  assert.ok(!(await page.evaluate(() => JSON.stringify(sessionStorage))).includes('private-p1'));
   assert.deepEqual(errors, []); assert.deepEqual(external, []);
 });
