@@ -25,7 +25,8 @@ export function parseRedactionTemplate(input) {
 }
 
 export function createRedactionTemplate(name, settings) {
-  return parseRedactionTemplate(JSON.stringify({ schemaVersion: 1, kind: 'moonprivacykit/redaction-template', name, settings }));
+  const schemaVersion = settings?.fields?.some(f => ['age', 'date'].includes(f.action)) ? 2 : 1;
+  return parseRedactionTemplate(JSON.stringify({ schemaVersion, kind: 'moonprivacykit/redaction-template', name, settings }));
 }
 
 function redactionOperation(op, template, format, input) {

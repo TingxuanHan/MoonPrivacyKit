@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "kind": "moonprivacykit/redaction-template",
+  "name": "年龄分段与记录月份",
+  "settings": {
+    "fields": [
+      { "name": "person_id", "action": "keep" },
+      { "name": "age", "action": "age", "boundaries": [18, 30, 45, 60] },
+      { "name": "visit_date", "action": "date", "precision": "month" },
+      { "name": "contact", "action": "remove" }
+    ],
+    "spreadsheetSafe": true
+  }
+}

@@ -2,13 +2,31 @@
 pub struct FieldRule {
   name : String
   action : String
-} derive(ToJson)
+  boundaries : Array[Int]
+  precision : String
+}
 
 ///|
 pub extend FieldRule with ToJson::{to_json}
 
 ///|
+pub impl ToJson for FieldRule with fn to_json(self) {
+  let fields : Map[String, Json] = Map([
+    ("name", self.name.to_json()),
+    ("action", self.action.to_json()),
+  ])
+  if self.action == "age" {
+    fields["boundaries"] = self.boundaries.to_json()
+  }
+  if self.action == "date" {
+    fields["precision"] = self.precision.to_json()
+  }
+  Json::object(fields)
+}
+
+///|
 pub struct RedactionTemplate {
+  schema_version : Int
   name : String
   fields : Array[FieldRule]
   spreadsheet_safe : Bool
@@ -20,7 +38,7 @@ pub extend RedactionTemplate with ToJson::{to_json}
 ///|
 pub impl ToJson for RedactionTemplate with fn to_json(self) {
   {
-    "schemaVersion": 1,
+    "schemaVersion": self.schema_version.to_json(),
     "kind": "moonprivacykit/redaction-template",
     "name": self.name.to_json(),
     "settings": {
@@ -46,6 +64,7 @@ pub struct RedactionHandoff {
   result : RedactionResult
   eligible_fields : Array[String]
   excluded_fields : Array[String]
+  generalized_fields : Array[GeneralizedField]
 } derive(ToJson)
 
 ///|
@@ -71,7 +90,8 @@ pub fn parse_redaction_template(
   reject_duplicate_table_keys(input)
   require_keys(value, ["schemaVersion", "kind", "name", "settings"])
   let kind : String = decode(field(value, "kind"))
-  if decode_int(field(value, "schemaVersion")) != 1 ||
+  let version = decode_int(field(value, "schemaVersion"))
+  if (version != 1 && version != 2) ||
     kind != "moonprivacykit/redaction-template" {
     raise KitError("unsupported redaction template kind or version")
   }
@@ -91,25 +111,54 @@ pub fn parse_redaction_template(
   let seen : Map[String, Bool] = Map([])
   let fields : Array[FieldRule] = []
   for rule in rules {
-    require_keys(rule, ["name", "action"])
+    let action : String = decode(field(rule, "action"))
+    let keys = ["name", "action"]
+    if version == 2 && action == "age" {
+      keys.push("boundaries")
+    }
+    if version == 2 && action == "date" {
+      keys.push("precision")
+    }
+    require_keys(rule, keys)
     let key : String = decode(field(rule, "name"))
     table_field_name(key)
     if seen.contains(key) {
       raise KitError("template field rules must have unique names")
     }
     seen[key] = true
-    let action : String = decode(field(rule, "action"))
-    if action != "keep" && action != "remove" && action != "mask" {
-      raise KitError("template actions must be keep, remove or mask")
+    let boundaries = if version == 2 && action == "age" {
+      let values = decode_ints(field(rule, "boundaries"))
+      validate_age_boundaries(values)
+      values
+    } else {
+      []
     }
-    fields.push({ name: key, action, })
+    let precision : String = if version == 2 && action == "date" {
+      let value : String = decode(field(rule, "precision"))
+      if value != "month" && value != "year" {
+        raise KitError("date precision must be month or year")
+      }
+      value
+    } else {
+      ""
+    }
+    if action != "keep" &&
+      action != "remove" &&
+      action != "mask" &&
+      !(version == 2 && (action == "age" || action == "date")) {
+      raise KitError("unsupported field action for this template version")
+    }
+    fields.push({ name: key, action, boundaries, precision, })
   }
   let template : RedactionTemplate = {
+    schema_version: version,
     name,
     fields,
     spreadsheet_safe: decode(field(settings, "spreadsheetSafe")),
   }
-  validate_policy(redaction_template_policy(template), fields.map(f => f.name))
+  if fields.all(f => f.action == "keep") {
+    raise KitError("select at least one field to remove, mask or generalize")
+  }
   template
 }
 
@@ -132,7 +181,12 @@ pub fn check_redaction_template(
   } else if format == "csv" && checked.fields.all(f => f.action == "remove") {
     "no_remaining_columns"
   } else {
-    ""
+    try {
+      validate_generalization_values(checked, format, input)
+      ""
+    } catch {
+      KitError(_) => "invalid_values"
+    }
   }
   {
     compatible: issue.is_empty(),
@@ -154,6 +208,9 @@ pub fn apply_redaction_template(
     )
   }
   let policy = redaction_template_policy(template)
+  if template.fields.any(f => f.action == "age" || f.action == "date") {
+    return apply_generalized_template(template, format, input)
+  }
   if format == "csv" {
     redact_csv(input, policy, spreadsheet_safe=template.spreadsheet_safe)
   } else {
@@ -163,7 +220,8 @@ pub fn apply_redaction_template(
 
 ///|
 /// Handoff metadata is for the trusted holder, not a public privacy report.
-/// Only explicitly kept columns with exactly preserved names and values qualify.
+/// Only unchanged kept columns qualify as identities. Generalized columns may
+/// be used as categories with explicitly reviewed public domains.
 pub fn prepare_redaction_handoff(
   template : RedactionTemplate,
   format : String,
@@ -173,6 +231,7 @@ pub fn prepare_redaction_handoff(
   let eligible = template.fields
     .filter(f => f.action == "keep")
     .map(f => f.name)
+  let generalized = generalized_field_descriptions(template)
   if format == "csv" {
     let before = parse_csv(input)
     // Reject ambiguous output headers (including collisions introduced by escaping).
@@ -189,12 +248,19 @@ pub fn prepare_redaction_handoff(
         _ => false
       }
     })
+    let usable = generalized.filter(f => {
+      after.headers.contains(f.name) &&
+      (!template.spreadsheet_safe || !formula_like(f.name))
+    })
     {
       result,
       eligible_fields: unchanged,
       excluded_fields: template.fields
       .map(f => f.name)
-      .filter(name => !unchanged.contains(name)),
+      .filter(name => {
+        !unchanged.contains(name) && !usable.any(f => f.name == name)
+      }),
+      generalized_fields: usable,
     }
   } else {
     {
@@ -202,7 +268,10 @@ pub fn prepare_redaction_handoff(
       eligible_fields: eligible,
       excluded_fields: template.fields
       .map(f => f.name)
-      .filter(name => !eligible.contains(name)),
+      .filter(name => {
+        !eligible.contains(name) && !generalized.any(f => f.name == name)
+      }),
+      generalized_fields: generalized,
     }
   }
 }

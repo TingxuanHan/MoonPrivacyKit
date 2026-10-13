@@ -32,7 +32,7 @@ test('field templates round trip explicit rules, remain immutable and reject amb
   for (const bad of [
     raw.replace('"schemaVersion":1', '"schemaVersion":1,"schemaVersion":1'),
     raw.replace('"action":"keep"', '"action":"keep","act\\u0069on":"mask"'),
-    raw.replace('"schemaVersion":1', '"schemaVersion":2'),
+    raw.replace('"schemaVersion":1', '"schemaVersion":3'),
     raw.replace('"spreadsheetSafe":true', '"spreadsheetSafe":"true"'),
     JSON.stringify({ ...template, requestId: 'secret-identity' }),
     JSON.stringify({ ...template, settings: { ...template.settings, data: 'secret-data' } }),

@@ -130,10 +130,25 @@ pub struct RedactionAudit {
   removed_values : Int
   masked_values : Int
   spreadsheet_escapes : Int
-} derive(ToJson)
+  generalized_values : Int
+}
 
 ///|
 pub extend RedactionAudit with ToJson::{to_json}
+
+///|
+pub impl ToJson for RedactionAudit with fn to_json(self) {
+  let values : Map[String, Json] = Map([
+    ("records", self.records.to_json()),
+    ("removed_values", self.removed_values.to_json()),
+    ("masked_values", self.masked_values.to_json()),
+    ("spreadsheet_escapes", self.spreadsheet_escapes.to_json()),
+  ])
+  if self.generalized_values > 0 {
+    values["generalized_values"] = self.generalized_values.to_json()
+  }
+  Json::object(values)
+}
 
 ///|
 pub struct RedactionResult {
@@ -162,6 +177,25 @@ fn csv_quote(value : String) -> String {
 }
 
 ///|
+fn serialize_csv(table : CsvTable, spreadsheet_safe : Bool) -> (String, Int) {
+  let lines : Array[String] = []
+  let mut escapes = 0
+  for row in [table.headers] + table.rows {
+    let cells : Array[String] = []
+    for value in row {
+      if spreadsheet_safe && formula_like(value) {
+        cells.push(csv_quote("'" + value))
+        escapes = escapes + 1
+      } else {
+        cells.push(csv_quote(value))
+      }
+    }
+    lines.push(cells.join(","))
+  }
+  (lines.join("\r\n") + "\r\n", escapes)
+}
+
+///|
 /// Spreadsheet escaping prefixes formula-like cells with an apostrophe.
 /// This is a sharing format; it may change negative numeric cells into text.
 pub fn redact_csv(
@@ -180,19 +214,7 @@ pub fn redact_csv(
   if kept.is_empty() {
     raise KitError("CSV export must retain at least one column")
   }
-  let lines : Array[String] = []
-  let mut escapes = 0
-  let headers : Array[String] = []
-  for i in kept {
-    let value = table.headers[i]
-    if spreadsheet_safe && formula_like(value) {
-      headers.push(csv_quote("'" + value))
-      escapes = escapes + 1
-    } else {
-      headers.push(csv_quote(value))
-    }
-  }
-  lines.push(headers.join(","))
+  let rows : Array[Array[String]] = []
   for row in table.rows {
     let cells : Array[String] = []
     for i in kept {
@@ -201,22 +223,22 @@ pub fn redact_csv(
       } else {
         row[i]
       }
-      if spreadsheet_safe && formula_like(value) {
-        cells.push(csv_quote("'" + value))
-        escapes = escapes + 1
-      } else {
-        cells.push(csv_quote(value))
-      }
+      cells.push(value)
     }
-    lines.push(cells.join(","))
+    rows.push(cells)
   }
+  let (output, escapes) = serialize_csv(
+    { headers: kept.map(i => table.headers[i]), rows, },
+    spreadsheet_safe,
+  )
   {
-    output: lines.join("\r\n") + "\r\n",
+    output,
     audit: {
       records: table.rows.length(),
       removed_values: table.rows.length() * policy.remove.length(),
       masked_values: table.rows.length() * policy.mask.length(),
       spreadsheet_escapes: escapes,
+      generalized_values: 0,
     },
   }
 }

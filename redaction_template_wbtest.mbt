@@ -102,7 +102,7 @@ test "redaction template schema rejects injected state unknown rules and ambiguo
 test "redaction templates reject unsupported versions names actions and incomplete decisions" {
   for
     (key, replacement) in [
-      ("schemaVersion", Json::number(2.0)),
+      ("schemaVersion", Json::number(3.0)),
       ("schemaVersion", Json::number(1.5)),
       ("name", Json::string("line\nbreak")),
       ("name", Json::string(" ")),

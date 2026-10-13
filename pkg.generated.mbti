@@ -142,8 +142,19 @@ pub fn FieldPolicy::to_json(Self) -> Json
 pub struct FieldRule {
   name : String
   action : String
-} derive(ToJson)
+  boundaries : Array[Int]
+  precision : String
+}
 pub fn FieldRule::to_json(Self) -> Json
+pub impl ToJson for FieldRule
+
+pub struct GeneralizedField {
+  name : String
+  action : String
+  precision : String
+  categories : Array[String]
+} derive(ToJson)
+pub fn GeneralizedField::to_json(Self) -> Json
 
 pub struct MappedTable {
   unit_ids : Array[String]
@@ -202,8 +213,10 @@ pub struct RedactionAudit {
   removed_values : Int
   masked_values : Int
   spreadsheet_escapes : Int
-} derive(ToJson)
+  generalized_values : Int
+}
 pub fn RedactionAudit::to_json(Self) -> Json
+pub impl ToJson for RedactionAudit
 
 pub struct RedactionCompatibility {
   compatible : Bool
@@ -217,6 +230,7 @@ pub struct RedactionHandoff {
   result : RedactionResult
   eligible_fields : Array[String]
   excluded_fields : Array[String]
+  generalized_fields : Array[GeneralizedField]
 } derive(ToJson)
 pub fn RedactionHandoff::to_json(Self) -> Json
 
@@ -227,6 +241,7 @@ pub struct RedactionResult {
 pub fn RedactionResult::to_json(Self) -> Json
 
 pub struct RedactionTemplate {
+  schema_version : Int
   name : String
   fields : Array[FieldRule]
   spreadsheet_safe : Bool

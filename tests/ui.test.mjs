@@ -609,3 +609,145 @@ test('changed fields cannot reenter statistics through templates and interrupted
   assert.ok(!(await page.evaluate(() => JSON.stringify(sessionStorage))).includes('private-p1'));
   assert.deepEqual(errors, []); assert.deepEqual(external, []);
 });
+
+const ageControl = () => fieldControl('age').locator('..').locator('[data-boundaries]');
+const dateControl = () => fieldControl('visit_date').locator('..').locator('[data-precision]');
+const generalizationRows = [
+  { person_id: 'private-p1', age: 23, visit_date: '2024-02-29', contact: 'secret-contact' },
+  { person_id: 'private-p2', age: 46, visit_date: '2026-02-18', contact: 'secret-contact' },
+];
+let generalizedConfig;
+async function generalizationExample() {
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-generalize-example').click(); await redactIdle();
+}
+
+test('age and date rules expose only active parameters and reuse exported version two across CSV and JSON', async () => {
+  await page.reload(); await page.setViewportSize({ width: 1365, height: 1000 });
+  await generalizationExample();
+  assert.equal(await ageControl().isVisible(), true);
+  assert.equal(await dateControl().isVisible(), true);
+  assert.equal(await fieldControl('person_id').locator('..').locator('[data-boundaries]').isEnabled(), false);
+  await fieldControl('age').focus(); await page.keyboard.press('Tab');
+  assert.equal(await ageControl().evaluate(el => el === document.activeElement), true);
+  await ageControl().fill('18，30，45，60');
+  await dateControl().selectOption('year');
+  await processRedaction();
+  assert.match(await page.locator('#redact-preview').innerText(), /18-29/);
+  assert.ok(!(await page.locator('#redact-preview').innerText()).includes('2026-01'));
+  assert.match(await page.locator('#redact-summary').innerText(), /泛化 6 处/);
+  await page.locator('#redact-template-save > summary').click();
+  await page.locator('#redact-template-name').fill('年龄与年份');
+  generalizedConfig = await saveDownload(() => page.locator('#redact-template-export').click(), 'generalized-template.json');
+  const config = JSON.parse(readFileSync(generalizedConfig));
+  assert.equal(config.schemaVersion, 2);
+  assert.deepEqual(config.settings.fields[1].boundaries, [18, 30, 45, 60]);
+  assert.equal(config.settings.fields[2].precision, 'year');
+  assert.ok(!readFileSync(generalizedConfig, 'utf8').includes('unit-001'));
+  await page.screenshot({ path: join(artifacts, 'generalization-desktop.png'), fullPage: true });
+  await page.reload();
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-templates > summary').click();
+  await page.locator('#redact-template-file').setInputFiles(generalizedConfig); await redactIdle();
+  await page.locator('#redact-file').setInputFiles({ name: 'table.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(generalizationRows)) }); await redactIdle();
+  assert.equal(await ageControl().isVisible(), false);
+  assert.equal(await page.locator('#redact-template-apply').isEnabled(), true);
+  await page.locator('#redact-template-apply').click(); await redactIdle();
+  assert.equal(await ageControl().inputValue(), '18,30,45,60');
+  assert.equal(await dateControl().inputValue(), 'year');
+  await processRedaction();
+  const output = await saveDownload(() => page.locator('#download-redacted').click(), 'generalized-data.json');
+  assert.deepEqual(JSON.parse(readFileSync(output)), [
+    { person_id: 'private-p1', age: '18-29', visit_date: '2024' },
+    { person_id: 'private-p2', age: '45-59', visit_date: '2026' },
+  ]);
+});
+
+test('invalid generalized data and edited parameters discard stale previews with actionable mobile errors', async () => {
+  const invalidRows = [generalizationRows[0], { ...generalizationRows[1], visit_date: '2026-02-30' }];
+  await page.locator('#redact-file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(invalidRows)) }); await redactIdle();
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  assert.equal(await page.locator('#redact-template-apply').isEnabled(), false);
+  assert.match(await page.locator('#redact-template-check').innerText(), /年龄或日期不符合规则/);
+  await fieldControl('age').selectOption('age'); await fieldControl('visit_date').selectOption('date');
+  await fieldControl('contact').selectOption('remove');
+  await page.getByRole('button', { name: '处理并预览' }).click(); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /未跳过任何记录/);
+  assert.ok(!(await page.locator('#notice').innerText()).includes('secret-contact'));
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  await generalizationExample(); await processRedaction();
+  await ageControl().fill('30,18');
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+  await page.getByRole('button', { name: '处理并预览' }).click(); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /递增整数/);
+  await ageControl().fill('18,30,45,60'); await processRedaction();
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'generalization-mobile.png'), fullPage: true });
+  await fieldControl('age').selectOption('keep');
+  assert.equal(await ageControl().isVisible(), false);
+  assert.equal(await ageControl().isEnabled(), false);
+  assert.equal(await page.locator('#redact-result').isVisible(), false);
+});
+
+test('generalized categories feed protected statistics without becoming identities or changing release recovery', async () => {
+  await page.reload(); await page.setViewportSize({ width: 1365, height: 1000 });
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  await statsProject('年龄分布与恢复');
+  await generalizationExample(); await processRedaction();
+  await page.locator('#redact-to-statistics').click(); await redactIdle(); await statsIdle();
+  assert.deepEqual(await page.locator('#stats-unit option').allTextContents(), ['请选择列', 'person_id']);
+  assert.deepEqual(await page.locator('#stats-category option').allTextContents(), ['请选择列', 'person_id', 'age（已泛化）', 'visit_date（已泛化）']);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['1', '0', '1', '0']);
+  await page.locator('#stats-query').selectOption('histogram');
+  await page.locator('#stats-unit').selectOption('person_id');
+  await page.locator('#stats-categories').fill('待复核类别');
+  await page.locator('#stats-category').selectOption('age');
+  assert.equal(await page.locator('#stats-categories').inputValue(), '待复核类别');
+  await page.locator('#stats-use-age-categories').click();
+  assert.equal(await page.locator('#stats-categories').inputValue(), '0-17\n18-29\n30-44\n45-59\n60+');
+  await page.locator('#stats-category').selectOption('visit_date');
+  assert.equal(await page.locator('#stats-use-age-categories').isVisible(), false);
+  assert.equal(await page.locator('#stats-categories').inputValue(), '0-17\n18-29\n30-44\n45-59\n60+');
+  const config = { schemaVersion: 1, kind: 'moonprivacykit/statistics-template', name: '年龄分布', settings: {
+    query: 'histogram', unitField: 'age', categoryField: 'age', categories: ['0-17', '18-29', '30-44', '45-59', '60+'], epsilon: '0.3', maxContributions: 1,
+  } };
+  await page.locator('#stats-templates > summary').click();
+  await page.locator('#stats-template-file').setInputFiles({ name: 'bad-unit.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(config)) }); await statsIdle();
+  assert.equal(await page.locator('#stats-template-apply').isEnabled(), false);
+  assert.match(await page.locator('#stats-template-check').innerText(), /泛化列只能作为类别/);
+  config.settings.unitField = 'person_id';
+  await page.locator('#stats-template-file').setInputFiles({ name: 'age-statistics.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(config)) }); await statsIdle();
+  await page.locator('#stats-template-apply').click(); await statsIdle();
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['1', '0', '1', '0']);
+  await page.locator('#stats-source summary').click();
+  await page.screenshot({ path: join(artifacts, 'generalization-statistics-desktop.png'), fullPage: true });
+  let first, saved;
+  await page.route('**/publish', async route => {
+    first = route.request().postDataJSON();
+    const response = await route.fetch(); saved = await response.json();
+    await route.abort('failed');
+  }, { times: 1 });
+  await page.locator('#stats-publish').click(); await statsIdle();
+  assert.equal(saved.ok, true);
+  assert.equal(await page.locator('#stats-pending').isVisible(), true);
+  assert.ok(!first.input.includes('example.test') && !first.input.includes('2026-01-08'));
+  assert.match(first.input, /18-29/);
+  await page.getByRole('button', { name: '文件脱敏', exact: true }).click();
+  await page.locator('#redact-to-statistics').click(); await redactIdle();
+  assert.match(await page.locator('#notice').innerText(), /等待确认/);
+  await page.getByRole('button', { name: '隐私统计', exact: true }).click(); await statsIdle();
+  let retried;
+  await page.route('**/publish', async route => { retried = route.request().postDataJSON(); await route.continue(); }, { times: 1 });
+  await page.locator('#stats-publish').click();
+  await page.locator('#stats-complete').waitFor({ state: 'visible' }); await statsIdle();
+  assert.deepEqual(retried, first);
+  const output = await saveDownload(() => page.getByRole('button', { name: '下载这份报告', exact: true }).click(), 'generalized-report.json');
+  assert.deepEqual(JSON.parse(readFileSync(output)), saved.data);
+  assert.deepEqual(await page.locator('#stats-budget dd').allTextContents(), ['0.7', '0.3', '1', '1']);
+  assert.ok(!(await page.evaluate(() => JSON.stringify(sessionStorage))).includes('unit-001'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: join(artifacts, 'generalization-statistics-mobile.png'), fullPage: true });
+  assert.deepEqual(errors, []); assert.deepEqual(external, []);
+});

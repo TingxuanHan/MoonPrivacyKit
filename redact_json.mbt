@@ -78,6 +78,7 @@ pub fn redact_json(
       removed_values: removed,
       masked_values: masked,
       spreadsheet_escapes: 0,
+      generalized_values: 0,
     },
   }
 }

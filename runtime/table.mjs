@@ -62,9 +62,10 @@ export function publishTemplateRelease(ledgerPath, format, input, templateText, 
 export function publishRedactedRelease(ledgerPath, format, input, redactionText, statisticsText, requestId) {
   const processed = prepareRedactionHandoff(parseRedactionTemplate(redactionText), format, input);
   const plan = parseStatisticsTemplate(statisticsText).settings;
-  const required = [plan.unitField, ...(plan.query === 'histogram' ? [plan.categoryField] : [])];
-  if (required.some(field => !processed.eligible_fields.includes(field))) {
-    throw new Error('Statistics require unchanged fields. Review the redaction rules or use the original table in the trusted environment.');
+  const categoryFields = [...processed.eligible_fields, ...processed.generalized_fields.map(f => f.name)];
+  if (!processed.eligible_fields.includes(plan.unitField) ||
+      (plan.query === 'histogram' && !categoryFields.includes(plan.categoryField))) {
+    throw new Error('Statistics require unchanged fields for identities and eligible category fields. Review the processing rules.');
   }
   return publishTemplateRelease(ledgerPath, format, processed.result.output, statisticsText, requestId);
 }

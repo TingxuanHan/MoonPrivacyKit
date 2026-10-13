@@ -10,7 +10,7 @@ export function initStatistics({ callCore, element, download }) {
   let loaded = false, busy = false, token = '', selected = '', projects = [];
   let table = null, pending = null, snapshot = null, completed = false, historyOffset = 0;
   let templatePreview = null, templateCheck = null;
-  let eligibleFields = null;
+  let eligibleFields = null, generalizedFields = [];
   try {
     selected = sessionStorage.getItem(SELECTED) || '';
     const saved = JSON.parse(sessionStorage.getItem(PENDING) || 'null');
@@ -179,16 +179,20 @@ export function initStatistics({ callCore, element, download }) {
       if (categories.length < 1 || categories.length > 256 || categories.some(c => !c.trim() || c.length > 128) || new Set(categories).size !== categories.length) invalid('请填写 1 至 256 个不重复的公开类别，每行一个，不能有空行，每个最多 128 个字符。');
       Object.assign(plan, { categoryField: $('category').value, categories });
     }
-    if (blockedColumns(plan).length) invalid('所选列已被字段处理改写。请使用保持原样的人员标识和类别，或在可信环境中用原表统计。');
+    if (blockedColumns(plan).length) invalid('所选列不适用于当前用途。人员标识须保持原样，类别可使用保持原样或经年龄、日期泛化的列。');
     return plan;
   }
   function blockedColumns(plan) {
-    return eligibleFields ? [plan.unitField, ...(plan.query === 'histogram' ? [plan.categoryField] : [])].filter(f => f && !eligibleFields.includes(f)) : [];
+    if (!eligibleFields) return [];
+    const blocked = plan.unitField && !eligibleFields.includes(plan.unitField) ? [plan.unitField] : [];
+    if (plan.query === 'histogram' && plan.categoryField && !eligibleFields.includes(plan.categoryField) && !generalizedFields.some(f => f.name === plan.categoryField)) blocked.push(plan.categoryField);
+    return [...new Set(blocked)];
   }
   function estimate() {
     const histogram = $('query').value === 'histogram';
     $('category-settings').hidden = !histogram;
     $('category').required = histogram; $('categories').required = histogram;
+    $('use-age-categories').hidden = !histogram || !generalizedFields.some(f => f.name === $('category').value && f.action === 'age');
     try {
       const plan = settings();
       const mechanism = callCore({ op: 'centralMechanism', category_count: plan.categories?.length || 1, epsilon: Number(plan.epsilon), max_contributions: plan.maxContributions });
@@ -202,15 +206,18 @@ export function initStatistics({ callCore, element, download }) {
     try { fields = callCore({ op: 'inspect', format, input }); }
     catch { invalid('无法读取表格，请检查 UTF-8 编码、唯一的列名和 CSV／JSON 结构。'); }
     eligibleFields = source ? [...source.eligible_fields] : null;
-    if (eligibleFields) fields = fields.filter(f => eligibleFields.includes(f));
+    generalizedFields = source ? [...source.generalized_fields] : [];
     if (!fields.length) invalid('没有可选择的列。空数据请使用保留表头的 CSV；JSON 需包含字段定义。');
     const oldUnit = $('unit').value, oldCategory = $('category').value;
-    for (const control of [$('unit'), $('category')]) control.replaceChildren(element('option', { value: '', text: '请选择列' }), ...fields.map(f => element('option', { value: f, text: f })));
-    $('unit').value = fields.includes(oldUnit) ? oldUnit : '';
-    $('category').value = fields.includes(oldCategory) ? oldCategory : '';
+    const unitFields = fields.filter(f => !eligibleFields || eligibleFields.includes(f));
+    const categoryFields = fields.filter(f => !eligibleFields || eligibleFields.includes(f) || generalizedFields.some(g => g.name === f));
+    $('unit').replaceChildren(element('option', { value: '', text: '请选择列' }), ...unitFields.map(f => element('option', { value: f, text: f })));
+    $('category').replaceChildren(element('option', { value: '', text: '请选择列' }), ...categoryFields.map(f => element('option', { value: f, text: f + (generalizedFields.some(g => g.name === f) ? '（已泛化）' : '') })));
+    $('unit').value = unitFields.includes(oldUnit) ? oldUnit : '';
+    $('category').value = categoryFields.includes(oldCategory) ? oldCategory : '';
     table = { input, format };
     $('source').hidden = !source;
-    $('source-fields').textContent = source ? `可选字段：${fields.join('、')}\n已删除或改写，不能选择：${source.excluded_fields.join('、') || '无'}` : '';
+    $('source-fields').textContent = source ? `保持原样：${unitFields.join('、') || '无'}\n泛化后仅可用作类别：${generalizedFields.map(f => f.name).join('、') || '无'}\n已删除或改写，不能选择：${source.excluded_fields.join('、') || '无'}` : '';
     $('file-note').textContent = `已载入：${name}。只显示列名，原始记录仅用于本机统计。`;
     $('settings').hidden = false;
     if (example) {
@@ -237,7 +244,7 @@ export function initStatistics({ callCore, element, download }) {
         templateCheck = blocked.length ? { compatible: false, issue: 'changed_fields', missing_fields: blocked }
           : checkStatisticsTemplate(templatePreview, table.format, table.input);
         result = templateCheck.compatible ? '字段与记录校验通过。应用后请核对列的含义和人员标识，确认适合本次任务。'
-          : templateCheck.issue === 'changed_fields' ? `模板要求已删除或改写的列：${blocked.join('、')}。请改用保持原样的列，或在可信环境中用原表统计。`
+          : templateCheck.issue === 'changed_fields' ? `模板要求已删除或改写的列：${blocked.join('、')}。人员标识须保持原样；泛化列只能作为类别。请调整模板或使用原表统计。`
           : templateCheck.issue === 'missing_fields' ? `缺少模板所需字段：${templateCheck.missing_fields.join('、')}。请选择匹配的文件，或取消预览后手动设置。`
           : '表格记录与模板不兼容。请检查人员标识、字段类型或预设类别；当前设置保持不变。';
       } catch { result = '无法检查这份表格，请检查格式和大小，或重新选择文件。'; }
@@ -275,7 +282,7 @@ export function initStatistics({ callCore, element, download }) {
   });
   $('file').addEventListener('change', () => run(async () => {
     table = null; $('settings').hidden = true; $('report').hidden = true; $('file-note').textContent = '未载入有效文件，请选择符合要求的 CSV 或 JSON。';
-    eligibleFields = null; $('source').hidden = true;
+    eligibleFields = null; generalizedFields = []; $('source').hidden = true;
     previewTemplate();
     const file = $('file').files[0];
     if (!file || file.size > 4_000_000) invalid('请选择不超过 4 MB 的 CSV 或 JSON 文件。');
@@ -325,6 +332,13 @@ export function initStatistics({ callCore, element, download }) {
   });
   $('template-export').addEventListener('click', () => run(exportTemplate));
   $('template-complete').addEventListener('click', () => run(exportTemplate));
+  $('use-age-categories').addEventListener('click', () => {
+    const field = generalizedFields.find(f => f.name === $('category').value && f.action === 'age');
+    if (!field || busy || completed || (pending && snapshot)) return;
+    $('categories').value = field.categories.join('\n');
+    estimate();
+    message('已按字段配置的分段起点填写全部类别，未从个人记录提取；请核对后发布。');
+  });
   $('settings').addEventListener('input', () => { $('report').hidden = true; estimate(); });
   $('form').addEventListener('submit', event => {
     event.preventDefault(); run(async () => {
