@@ -9,7 +9,7 @@
 1. 发起者在“创建问卷”直接编辑，或展开“从场景模板开始”，选择团队反馈、课程反馈、服务体验或已保存模板，预览后明确应用。复核题目、每行一个选项、每题 ε 与计划次数，导出问卷配置和参与说明。首版只支持必答、单选、有限选项；不收集姓名和自由文本。
 2. 补充调查目的、收集渠道、结果用途与保留期限，把配置和说明一起交给参与者。参与者在可信工作台中打开“填写问卷”，复核开销后填写；点击“生成受保护回答”后，页面清除原始选项，提供响应文件下载。
 3. 参与者把响应文件交给发起者。文件传递渠道可能暴露参与者身份，应按调查用途选择合适的渠道。
-4. 发起者在“汇总结果”选择原问卷与多个响应文件，查看校正比例、95% 同时置信范围和小样本提示，导出报告。
+4. 发起者在“汇总结果”选择原问卷与多个响应文件，查看校正比例、95% 同时置信范围和小样本提示，导出 JSON 或可离线阅读的 HTML 报告。
 
 重复下载同一次生成的响应会得到相同文件。重传时使用该文件；重新填写或重新生成会增加隐私开销。配置或选项顺序改变后指纹会变化，旧响应不能与新配置混用。去重只识别同一响应编号，不能证明每个自然人只参加了一次。
 
@@ -47,6 +47,8 @@
 
 ## 命令行
 
+问卷汇总、两种精度评估及隐私统计结果旁均提供“下载可读报告（HTML）”。用浏览器打开后可打印或保存为 PDF；报告包括对应参数、误差范围和保护条件。统计历史也能导出同一结果，不重新采样或扣减预算，详见[可读报告导出](READABLE_REPORTS.md)。
+
 在仓库根目录构建后运行。输出路径必须是新文件；程序拒绝覆盖已有文件。
 
 ```sh
@@ -60,6 +62,7 @@ node cli/main.mjs redact json examples/sample.json clean.json examples/policy.js
 node cli/main.mjs check-redaction-template csv examples/redaction-table.csv examples/redaction-template.json
 node cli/main.mjs redact-template csv examples/redaction-table.csv processed.csv examples/redaction-template.json
 node cli/main.mjs plan examples/plan.json plan-report.json
+node cli/main.mjs export-report plan plan-report.json plan-report.html
 ```
 
 `protect` 在终端逐题询问。自动化管道可向其标准输入传入从 0 开始的选项下标数组；不要把真实回答放在命令行参数、共享日志或 Git 仓库中。脱敏会同时写入 `<输出文件>.audit.json`。使用 `private-data/` 和 `reports/` 目录可避免默认被 Git 跟踪，但仍需在提交前检查。

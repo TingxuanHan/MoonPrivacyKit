@@ -213,6 +213,10 @@ summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 5px 0
 .bar-value { fill: #45866a; }
 .bar-over { fill: #bd8b49; }
 .bar-target { stroke: #25483b; stroke-width: 2; }
+.report-downloads { min-width: 0; }
+.report-downloads .button-row { margin-top: 0; }
+.report-downloads .footnote { margin-top: 7px; }
+.report-export-error { color: #9b3825; font-size: 13px; margin-top: 8px; }
 @media(max-width:1180px) {
   main { padding: 28px; }
   .shell { grid-template-columns: 185px minmax(0,1fr); }

@@ -1,6 +1,7 @@
 // Raw tables and the session token stay in memory. Browser storage contains only
 // the selected project and a pending request ID used to recover a saved release.
 import { parseStatisticsTemplate, createStatisticsTemplate, checkStatisticsTemplate } from '/runtime/templates.mjs';
+import { reportActions } from '/web/report-actions.mjs';
 
 export function initStatistics({ callCore, element, download }) {
   const $ = id => document.getElementById(`stats-${id}`);
@@ -147,8 +148,7 @@ export function initStatistics({ callCore, element, download }) {
   function showReport(result) {
     const r = result.report;
     const interval = value => `${Math.max(0, value - r.absolute_error_bound)}–${Math.min(r.output_upper, value + r.absolute_error_bound)}`;
-    const save = element('button', { class: 'primary', type: 'button', text: '下载这份报告' });
-    save.addEventListener('click', () => download(`private-statistics-${result.release_id}.json`, result));
+    const save = reportActions({ kind: 'statistics', report: result, filename: `private-statistics-${result.release_id}`, jsonLabel: '下载这份报告', jsonClass: 'primary', element, download });
     const nodes = [element('div', { class: 'result-heading' }, [element('h2', { text: r.query === 'count' ? '受保护计数' : '受保护类别分布' }), save]),
       element('p', { class: 'muted', text: `本次 ε ${r.epsilon} · 每人最多 ${r.max_contributions} 条 · 95% 同时绝对误差界 ±${r.absolute_error_bound}` })];
     if (r.query === 'count') nodes.push(element('div', { class: 'stats-count', text: String(r.counts[0]) }), element('p', { text: `误差范围：${interval(r.counts[0])}` }));

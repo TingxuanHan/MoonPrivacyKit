@@ -183,6 +183,7 @@ pub struct QuestionResult {
   id : String
   title : String
   options : Array[String]
+  epsilon : Double
   statistics : Estimate
 } derive(ToJson)
 
@@ -191,7 +192,12 @@ pub extend QuestionResult with ToJson::{to_json}
 
 ///|
 pub struct SurveyReport {
+  schema_version : Int32
+  mechanism : String
   survey_id : String
+  survey_title : String
+  survey_fingerprint : String
+  single_epsilon : Double
   accepted : Int32
   duplicates : Int32
   questionnaire_confidence : Double
@@ -254,6 +260,7 @@ pub fn aggregate_responses(
       id: question.id,
       title: question.title,
       options: question.options,
+      epsilon: question.epsilon,
       statistics: estimate(
         mechanisms[i],
         counts[i],
@@ -262,7 +269,12 @@ pub fn aggregate_responses(
     })
   }
   {
+    schema_version: 1,
+    mechanism: "rr24-v1",
     survey_id: survey.id,
+    survey_title: survey.title,
+    survey_fingerprint: fingerprint,
+    single_epsilon: survey_budget(survey, 1).single_epsilon,
     accepted: seen.length(),
     duplicates,
     questionnaire_confidence: 0.95,

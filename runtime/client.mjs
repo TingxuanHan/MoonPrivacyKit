@@ -63,8 +63,9 @@ export async function protectResponse(survey, answers) {
 }
 
 export async function aggregateResponses(survey, responses) {
-  const fingerprint = await surveyFingerprint(survey);
-  return callCore({ op: 'aggregate', survey, fingerprint, responses });
+  const snapshot = validateSurvey(survey);
+  const fingerprint = await surveyFingerprint(snapshot);
+  return callCore({ op: 'aggregate', survey: snapshot, fingerprint, responses });
 }
 
 // Private, per-release buffer. Rejection sampling is exact for every bound used

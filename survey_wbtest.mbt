@@ -63,6 +63,37 @@ test "retry files are deduplicated and changed survey fingerprints rejected" {
 }
 
 ///|
+test "survey reports retain configuration identity and protection parameters" {
+  let original = sample_survey()
+  let survey : Survey = {
+    ..original,
+    questions: [
+      original.questions[0],
+      { ..original.questions[0], id: "q2", epsilon: 0.5, },
+    ],
+  }
+  let response = protect_response(
+    survey,
+    test_fingerprint,
+    "0123456789abcdef0123456789abcdef",
+    [0, 1],
+    [0, 0],
+    [0, 0],
+  )
+  let report = aggregate_responses(survey, test_fingerprint, [response])
+  assert_eq(report.schema_version, 1)
+  assert_eq(report.mechanism, "rr24-v1")
+  assert_eq(report.survey_title, survey.title)
+  assert_eq(report.survey_fingerprint, test_fingerprint)
+  assert_eq(report.single_epsilon, 1.5)
+  assert_eq(report.questions[1].epsilon, 0.5)
+  require_keys(read_json(report.to_json().stringify()), [
+    "schema_version", "mechanism", "survey_id", "survey_title", "survey_fingerprint",
+    "single_epsilon", "accepted", "duplicates", "questionnaire_confidence", "questions",
+  ])
+}
+
+///|
 test "conflicting retry content is not silently accepted" {
   let survey = sample_survey()
   let r1 = protect_response(

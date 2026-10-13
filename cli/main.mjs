@@ -12,6 +12,7 @@ node cli/main.mjs survey-from-template <模板.json> <新问卷.json>
 node cli/main.mjs survey-guide <问卷.json> <计划采集次数> <新说明.txt>
 node cli/main.mjs assess-survey <问卷.json> <每次人数> <目标误差百分点> <采集次数> <新评估.json>
 node cli/main.mjs plan <方案.json> <新报告.json>
+node cli/main.mjs export-report <survey|assessment|statistics|plan> <已有报告.json> <新报告.html>
 node cli/main.mjs protect <问卷.json> <新回答.json>
 node cli/main.mjs aggregate <问卷.json> <新报告.json> <回答.json>...
 node cli/main.mjs redact <csv|json> <原文件> <新文件> <规则.json>
@@ -115,7 +116,13 @@ async function main() {
     }));
   } else if (command === 'plan' && args.length === 2) {
     requireNew([args[1]]);
-    writeNew(args[1], callCore({ ...readJson(args[0]), op: 'plan' }));
+    const input = readJson(args[0]);
+    const configuration = Object.fromEntries(['categories', 'questions', 'epsilon', 'samples', 'radius', 'collections'].map(key => [key, input[key]]));
+    writeNew(args[1], { configuration, ...callCore({ ...configuration, op: 'plan' }) });
+  } else if (command === 'export-report' && args.length === 3) {
+    requireNew([args[2]]);
+    const { renderReport } = await import('../runtime/report-export.mjs');
+    writeNew(args[2], renderReport(args[0], JSON.parse(readText(args[1], true))));
   } else if (command === 'protect' && args.length === 2) {
     requireNew([args[1]]);
     const survey = validateSurvey(readJson(args[0]));

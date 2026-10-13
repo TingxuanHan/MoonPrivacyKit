@@ -2,6 +2,7 @@ import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/
 import { initStatistics } from '/web/statistics.mjs';
 import { initRedaction } from '/web/redaction.mjs';
 import { initPlanner } from '/web/planner.mjs';
+import { reportActions } from '/web/report-actions.mjs';
 import { surveyPresets, parseSurveyTemplate, createSurveyTemplate, surveyFromTemplate, parseSurvey, surveyBudget, participantGuide, formatEpsilon } from '/runtime/survey-templates.mjs';
 
 const $ = selector => document.querySelector(selector);
@@ -242,8 +243,7 @@ $('#collect-form').addEventListener('submit', event => { event.preventDefault();
   const responses = await Promise.all(files.map(fileJson));
   const report = await aggregateResponses(survey, responses);
   if (ticket !== collectGeneration) return;
-  const exportButton = element('button', { class: 'secondary', text: '导出统计报告' });
-  exportButton.addEventListener('click', () => download(`${survey.id}.report.json`, report));
+  const exportButton = reportActions({ kind: 'survey', report, filename: `${survey.id}.report`, jsonLabel: '导出统计报告', element, download });
   const content = [element('div', { class: 'result-heading' }, [element('div', {}, [element('h2', { text: `${report.accepted} 份有效回答` }), element('p', { class: 'muted', text: `已忽略 ${report.duplicates} 份重复文件 · 整份问卷使用 95% 同时置信范围` })]), exportButton])];
   for (const q of report.questions) {
     const rows = q.statistics.categories.map((value, i) => element('div', { class: 'result-row' }, [element('span', { text: q.options[i] }), element('meter', { min: 0, max: 1, value: value.display_proportion, 'aria-label': `${q.options[i]}估计比例` }), element('small', { text: `${(value.display_proportion * 100).toFixed(1)}% · ${(value.lower * 100).toFixed(1)}–${(value.upper * 100).toFixed(1)}%` })]));

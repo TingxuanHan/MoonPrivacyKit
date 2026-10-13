@@ -1,5 +1,6 @@
 import { assessSurvey } from '/runtime/survey-assessment.mjs';
 import { surveyBudget, formatEpsilon } from '/runtime/survey-templates.mjs';
+import { reportActions } from '/web/report-actions.mjs';
 
 export function initPlanner({ callCore, element, download, guarded, currentSurvey, plannedCollections, openSurvey, openPlan }) {
   const $ = selector => document.querySelector(selector);
@@ -84,8 +85,7 @@ export function initPlanner({ callCore, element, download, guarded, currentSurve
       const values = element('div', { class: 'precision-values' }, [element('strong', { text: q.radius === null ? '无统计信号' : `±${points(q.radius)} 个百分点` }), element('span', { text: `所需人数：${needs(q)}` })]);
       return element('li', {}, [title, meta, values, ...(q.radius === null ? [element('p', { class: 'footnote', text: '请先复核本题参数，其他题目的评估仍有效。' })] : [precisionBar(q, a.target_radius)]), ...(q.radius > 1 ? [element('p', { class: 'footnote', text: '误差超过 100 个百分点；刻度条显示至 100。' })] : [])]);
     });
-    const exportButton = element('button', { class: 'secondary', type: 'button', text: '导出逐题评估' });
-    exportButton.addEventListener('click', () => download(`${report.surveyId}.assessment.json`, report));
+    const exportButton = reportActions({ kind: 'assessment', report, filename: `${report.surveyId}.assessment`, jsonLabel: '导出逐题评估', element, download });
     const edit = element('button', { class: 'text-button', type: 'button', text: '返回调整问卷' }); edit.addEventListener('click', openSurvey);
     resultBox.replaceChildren(
       element('p', { class: 'eyebrow', text: '问卷精度检查' }),
@@ -101,8 +101,7 @@ export function initPlanner({ callCore, element, download, guarded, currentSurve
 
   function renderCustom(config, result) {
     const radius = result.plan.per_question_radius[0];
-    const button = element('button', { class: 'secondary', text: '导出评估结果' });
-    button.addEventListener('click', () => download('privacy-plan.json', { configuration: config, ...result }));
+    const button = reportActions({ kind: 'plan', report: { configuration: config, ...result }, filename: 'privacy-plan', jsonLabel: '导出评估结果', element, download });
     resultBox.replaceChildren(element('p', { class: 'eyebrow', text: '统一参数评估' }), element('h2', { text: '这份方案的预期表现' }), metric('当前人数下的误差界', `±${points(radius)} 个百分点`, '95% 同时覆盖单次采集的全部题目与选项。'), metric('达到目标精度，预计需要', result.required_samples === null ? '超过 1,000 万人' : `${number(result.required_samples)} 人`, `每个选项目标误差不超过 ±${points(config.radius)} 个百分点。`), metric('每人的累计隐私开销 ε', formatEpsilon(result.plan.total_epsilon), `${config.questions} 道题 × 每题 ε ${config.epsilon} × ${config.collections} 次采集。`), element('p', { class: 'help', text: radius >= 0.5 ? '当前统计误差很宽。建议先增加样本量、减少题目或比较其他保护参数，再开展调查。' : '该误差界较保守，假设各次随机化独立；不保证样本具有代表性。重复采集的开销已计入，人数按每次采集计算。' }), element('div', { class: 'button-row' }, [button]));
   }
 
