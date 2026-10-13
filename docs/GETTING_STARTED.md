@@ -30,7 +30,9 @@
 
 ### 效果评估
 
-输入预计人数、选项数、题目数量、ε 和期望误差。工作台展示每次采集的精度及每人跨多次采集的累计开销，不把多次采集自动当成更多独立参与者。当前页面假设每题选项数、ε 相同，MoonBit 的 `plan_survey` 接口支持各题使用不同配置。
+在“创建问卷”的“发放前检查”区域点击“评估当前问卷”，或在“效果评估”切换到“当前问卷”。题目、选项数、每题 ε 与计划采集次数会自动载入；补充每次预计人数和目标误差后，查看逐题误差条、达标状态及所需人数，导出评估结果。误差为百分点，例如 5 表示 ±5 个百分点。
+
+修改问卷或原采集计划会使旧评估失效，须重新载入后计算。评估页可单独修改采集次数比较方案，不回写问卷计划。“自定义方案”保留每题选项数、ε 相同的快速比较方式。重复采集只累加每人的计划开销，不增加每次独立参与者人数；评估不生成回答或扣减统计账本预算。完整说明见[逐题精度评估](SURVEY_ASSESSMENT.md)。
 
 ### 隐私统计
 
@@ -50,6 +52,7 @@
 ```sh
 node cli/main.mjs init-survey my-survey.json
 node cli/main.mjs survey-guide my-survey.json 1 participation.txt
+node cli/main.mjs assess-survey my-survey.json 1000 5 1 assessment.json
 node cli/main.mjs protect my-survey.json response-1.json
 node cli/main.mjs aggregate my-survey.json report.json response-1.json
 node cli/main.mjs redact csv examples/sample.csv clean.csv examples/policy.json
@@ -83,7 +86,7 @@ const cleaned = callCore({
 });
 ```
 
-浏览器需要可信的 HTTPS 或 localhost 安全上下文。MoonBit 调用方可直接使用 `make_mechanism`、`estimate`、`plan_survey`、`parse_survey`、`aggregate_responses`、`redact_csv` 和 `redact_json`。底层 `randomize` 的随机样本由调用方负责，接真实数据前必须满足独立、均匀、不可预测的要求。
+浏览器需要可信的 HTTPS 或 localhost 安全上下文。MoonBit 调用方可直接使用 `make_mechanism`、`estimate`、`plan_survey`、`assess_survey`、`parse_survey`、`aggregate_responses`、`redact_csv` 和 `redact_json`。逐题评估的 JavaScript 接口为 `runtime/survey-assessment.mjs` 中的 `assessSurvey`。底层 `randomize` 的随机样本由调用方负责，接真实数据前必须满足独立、均匀、不可预测的要求。
 
 ## 开发约定
 

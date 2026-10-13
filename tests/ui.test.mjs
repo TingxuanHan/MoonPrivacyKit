@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { surveyFingerprint } from '../runtime/client.mjs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -875,5 +876,128 @@ test('generalized categories feed protected statistics without becoming identiti
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.screenshot({ path: join(artifacts, 'generalization-statistics-mobile.png'), fullPage: true });
+  assert.deepEqual(errors, []); assert.deepEqual(external, []);
+});
+
+test('current questionnaire transfers mixed parameters to precise per-question assessment without publishing', async () => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.reload(); await statsIdle();
+  await page.locator('#survey-templates summary').click();
+  await page.locator('#survey-preset').selectOption('team');
+  await page.locator('#survey-template-apply').click();
+  await page.locator('#question-editor [data-field=epsilon]').nth(0).fill('0.5');
+  await page.locator('#question-editor [data-field=epsilon]').nth(1).fill('1.5');
+  await page.locator('#survey-collections').fill('3');
+  const surveyFile = await saveDownload(() => page.getByRole('button', { name: '导出问卷配置', exact: true }).click(), 'assessed-survey.json');
+  const storage = await page.evaluate(() => JSON.stringify({ ...sessionStorage }));
+  const mutations = [];
+  const monitor = request => { if (request.method() !== 'GET') mutations.push(request.url()); };
+  page.on('request', monitor);
+  try {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: join(artifacts, 'workbench-survey-desktop.png'), fullPage: true });
+    await page.locator('#survey-evaluate').click();
+    assert.equal(await page.locator('#plan-mode-survey').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('#plan-uniform-fields [name=categories]').isDisabled(), true);
+    assert.equal(await page.locator('#plan-form [name=collections]').inputValue(), '3');
+    await page.locator('#plan-run').click();
+    await page.getByRole('button', { name: '导出逐题评估' }).waitFor();
+    assert.equal(await page.locator('.precision-list>li').count(), 2);
+    const path = await saveDownload(() => page.getByRole('button', { name: '导出逐题评估' }).click(), 'question-assessment.json');
+    const report = JSON.parse(readFileSync(path));
+    assert.equal(report.surveyFingerprint, await surveyFingerprint(JSON.parse(readFileSync(surveyFile))));
+    assert.deepEqual(report.assessment.questions.map(q => q.categories), [2, 3]);
+    assert.deepEqual(report.assessment.questions.map(q => q.epsilon), [0.5, 1.5]);
+    assert.equal(report.assessment.total_epsilon, 6);
+    assert.equal(report.assessment.target_met, false);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: join(artifacts, 'question-assessment-desktop.png'), fullPage: true });
+    await page.locator('#plan-form [name=samples]').fill(String(report.assessment.required_samples));
+    assert.equal(await page.getByRole('button', { name: '导出逐题评估' }).count(), 0);
+    await page.locator('#plan-run').click();
+    await page.getByRole('heading', { name: '当前人数达到设定的精度目标' }).waitFor();
+    const a = await saveDownload(() => page.getByRole('button', { name: '导出逐题评估' }).click(), 'precision-met.json');
+    const b = await saveDownload(() => page.getByRole('button', { name: '导出逐题评估' }).click(), 'precision-met-retry.json');
+    assert.equal(readFileSync(a, 'utf8'), readFileSync(b, 'utf8'));
+    assert.equal(await page.evaluate(() => JSON.stringify({ ...sessionStorage })), storage);
+    assert.deepEqual(mutations, []);
+  } finally { page.off('request', monitor); }
+});
+
+test('editing a transferred questionnaire invalidates its report and zero-signal questions remain explainable', async () => {
+  await page.locator('#plan-edit').click();
+  await page.locator('#question-editor [data-field=epsilon]').nth(0).fill('0');
+  await page.getByRole('button', { name: '效果评估', exact: true }).click();
+  assert.match(await page.locator('#plan-survey-state').innerText(), /问卷已修改/);
+  assert.equal(await page.locator('#plan-run').isEnabled(), false);
+  assert.equal(await page.getByRole('button', { name: '导出逐题评估' }).count(), 0);
+  await page.locator('#plan-reload').click();
+  await page.locator('#plan-run').click();
+  await page.getByRole('heading', { name: '有题目无法估计真实比例' }).waitFor();
+  assert.match(await page.locator('.precision-list>li').nth(0).innerText(), /无统计信号/);
+  assert.equal(await page.locator('.precision-bar').count(), 1);
+  const file = await saveDownload(() => page.getByRole('button', { name: '导出逐题评估' }).click(), 'no-signal.json');
+  assert.equal(JSON.parse(readFileSync(file)).assessment.questions[0].radius, null);
+  await page.locator('#plan-mode-custom').click();
+  assert.equal(await page.locator('#plan-uniform-fields [name=categories]').isEnabled(), true);
+  await page.locator('#plan-form [name=categories]').fill('256');
+  await page.locator('#plan-form [name=epsilon]').fill('0.01');
+  await page.locator('#plan-form [name=radius]').fill('0.01');
+  await page.locator('#plan-run').click();
+  assert.match(await page.locator('#plan-result').innerText(), /超过 1,000 万人/);
+  await page.locator('#plan-mode-survey').click();
+  assert.match(await page.locator('#plan-survey-description').innerText(), /单次 ε ≈ 1.5/);
+});
+
+test('questionnaire precision labels render safely with accessible bars across desktop tablet and mobile', async () => {
+  await page.locator('#plan-edit').click();
+  await page.locator('#question-editor [data-field=epsilon]').nth(0).fill('0.5');
+  const label = '<img src=x onerror=alert(1)>' + '待评估问题'.repeat(25);
+  await page.locator('#question-editor [data-field=title]').nth(0).fill(label);
+  await page.locator('#survey-evaluate').click();
+  await page.locator('#plan-form [name=radius]').fill('5');
+  await page.locator('#plan-form [name=samples]').fill('1000');
+  await page.locator('#plan-run').click();
+  await page.getByRole('button', { name: '导出逐题评估' }).waitFor();
+  assert.equal(await page.locator('#plan-result img').count(), 0);
+  assert.equal(await page.locator('.precision-bar[role=img][aria-label]').count(), 2);
+  for (const width of [900, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `overflow at ${width}`);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: join(artifacts, 'question-assessment-mobile.png'), fullPage: true });
+  await page.locator('#plan-form [name=radius]').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'plan-run');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  assert.ok(await page.locator('#plan-run').evaluate(node => getComputedStyle(node).transitionDuration === '0s'));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  assert.deepEqual(errors, []); assert.deepEqual(external, []);
+});
+
+test('changing assessment inputs while a fingerprint is pending discards the old result', async () => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.evaluate(() => {
+    const original = crypto.subtle.digest;
+    window.restoreAssessmentDigest = () => { crypto.subtle.digest = original; };
+    crypto.subtle.digest = function (...args) {
+      return new Promise((resolve, reject) => { window.finishAssessmentDigest = () => original.apply(this, args).then(resolve, reject); });
+    };
+  });
+  try {
+    await page.locator('#plan-run').click();
+    await page.waitForFunction(() => typeof window.finishAssessmentDigest === 'function');
+    await page.locator('#plan-form [name=samples]').fill('2000');
+    await page.evaluate(async () => { await window.finishAssessmentDigest(); });
+    await page.waitForFunction(() => !document.getElementById('plan-run').disabled);
+    assert.equal(await page.getByRole('button', { name: '导出逐题评估' }).count(), 0);
+    assert.match(await page.locator('#plan-result').innerText(), /方案已修改/);
+  } finally { await page.evaluate(() => { window.restoreAssessmentDigest(); delete window.restoreAssessmentDigest; delete window.finishAssessmentDigest; }); }
+  await page.locator('#plan-run').click();
+  await page.getByRole('button', { name: '导出逐题评估' }).waitFor();
+  const file = await saveDownload(() => page.getByRole('button', { name: '导出逐题评估' }).click(), 'updated-assessment.json');
+  assert.equal(JSON.parse(readFileSync(file)).assessment.samples, 2000);
   assert.deepEqual(errors, []); assert.deepEqual(external, []);
 });

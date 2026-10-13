@@ -37,9 +37,24 @@ fn decode_ints(value : Json) -> Array[Int32] raise KitError {
 }
 
 ///|
+fn[T : ToJson] nullable_json(value : T?) -> Json {
+  match value {
+    Some(value) => Json(value)
+    None => Json::null()
+  }
+}
+
+///|
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "assessSurvey" =>
+      assess_survey(
+        parse_survey(field(request, "survey").stringify()),
+        decode_int(field(request, "samples")),
+        decode(field(request, "target_radius")),
+        collections=decode_int(field(request, "collections")),
+      ).to_json()
     "parseSurveyTemplate" =>
       parse_survey_template(decode(field(request, "input"))).to_json()
     "surveyFromTemplate" =>
@@ -144,7 +159,7 @@ fn execute_request(request : Json) -> Json raise KitError {
       )
       {
         "plan": plan.to_json(),
-        "required_samples": Json(needed),
+        "required_samples": nullable_json(needed),
         "mechanism": m.to_json(),
       }
     }

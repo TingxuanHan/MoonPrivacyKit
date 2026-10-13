@@ -14,6 +14,8 @@ pub fn aggregate_responses(Survey, String, Array[ProtectedResponse]) -> SurveyRe
 
 pub fn apply_redaction_template(RedactionTemplate, String, String) -> RedactionResult raise KitError
 
+pub fn assess_survey(Survey, Int, Double, collections? : Int) -> SurveyAssessment raise KitError
+
 pub fn central_count(Array[String], CentralMechanism, (Int) -> Int) -> CentralRelease raise KitError
 
 pub fn central_histogram(Array[String], Array[Int], CentralMechanism, (Int) -> Int) -> CentralRelease raise KitError
@@ -206,6 +208,19 @@ pub(all) struct Question {
 pub fn Question::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Question::to_json(Self) -> Json
 
+pub struct QuestionPrecision {
+  id : String
+  title : String
+  categories : Int
+  epsilon : Double
+  radius : Double?
+  required_samples : Int?
+  reason : String
+  target_met : Bool
+}
+pub fn QuestionPrecision::to_json(Self) -> Json
+pub impl ToJson for QuestionPrecision
+
 pub struct QuestionResult {
   id : String
   title : String
@@ -275,6 +290,21 @@ pub(all) struct Survey {
 } derive(ToJson, @json.FromJson)
 pub fn Survey::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Survey::to_json(Self) -> Json
+
+pub struct SurveyAssessment {
+  samples : Int
+  collections : Int
+  target_radius : Double
+  confidence : Double
+  single_epsilon : Double
+  total_epsilon : Double
+  required_samples : Int?
+  reason : String
+  target_met : Bool
+  questions : Array[QuestionPrecision]
+}
+pub fn SurveyAssessment::to_json(Self) -> Json
+pub impl ToJson for SurveyAssessment
 
 pub struct SurveyBudget {
   questions : Int

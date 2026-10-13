@@ -1,6 +1,7 @@
 import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/runtime/client.mjs';
 import { initStatistics } from '/web/statistics.mjs';
 import { initRedaction } from '/web/redaction.mjs';
+import { initPlanner } from '/web/planner.mjs';
 import { surveyPresets, parseSurveyTemplate, createSurveyTemplate, surveyFromTemplate, parseSurvey, surveyBudget, participantGuide, formatEpsilon } from '/runtime/survey-templates.mjs';
 
 const $ = selector => document.querySelector(selector);
@@ -26,6 +27,8 @@ function notice(message, error = false) {
 function humanError(error) {
   const msg = error.message || '';
   if (/collection count/.test(msg)) return '计划采集次数须为 1 至 10,000 的整数。';
+  if (/sample count/.test(msg)) return '每次预计人数须为 1 至 1,000 万的整数。';
+  if (/target error/.test(msg)) return '目标误差必须大于 0 且小于 100 个百分点。';
   if (/UTF-8/.test(msg)) return '文件不是有效的 UTF-8 文本，请转换编码后重试。当前问卷已保留。';
   if (/template.*limit|at most 20/.test(msg)) return '问卷模板最多包含 20 道题，文本长度最多 100,000。';
   if (/template labels/.test(msg)) return '模板标题和选项须为单行，首尾不要留空格。';
@@ -74,6 +77,7 @@ function activate(group, target, attribute) {
   for (const button of $$(`[data-${attribute}]`)) button.setAttribute('aria-pressed', String(button.dataset[attribute] === target));
   for (const panel of $$(`.${group}`)) panel.hidden = panel.id !== `${group}-${target}`;
   notice('');
+  window.scrollTo(0, 0);
 }
 for (const button of $$('[data-view]')) button.addEventListener('click', () => activate('view', button.dataset.view, 'view'));
 for (const button of $$('[data-step]')) button.addEventListener('click', () => activate('step', button.dataset.step, 'step'));
@@ -100,10 +104,16 @@ function currentQuestions() {
 }
 const currentSurvey = () => validateSurvey({ schema_version: 1, id: surveyId, title: $('#survey-title').value.trim(), questions: currentQuestions() });
 const plannedCollections = () => Number($('#survey-collections').value);
+const planner = initPlanner({ callCore, element, download, guarded, currentSurvey, plannedCollections,
+  openSurvey: () => { $('[data-view=survey]').click(); $('[data-step=create]').click(); $('#survey-title').focus(); },
+  openPlan: () => $('[data-view=plan]').click(),
+});
+$('#survey-evaluate').addEventListener('click', () => guarded(() => planner.openCurrent()));
 const budgetText = b => `${b.questions} 道题 · 每人单次 ε ≈ ${formatEpsilon(b.single_epsilon)} · ${b.collections} 次累计 ε ≈ ${formatEpsilon(b.total_epsilon)}`;
 function updateBudget() {
   try { $('#create-meta').textContent = budgetText(surveyBudget(currentSurvey(), plannedCollections())); }
   catch { $('#create-meta').textContent = '完善题目、保护参数与计划次数后显示开销'; }
+  planner.draftChanged();
 }
 function renderEditor(questions) { $('#question-editor').replaceChildren(...questions.map(questionEditor)); updateBudget(); }
 $('#create-form').addEventListener('input', updateBudget);
@@ -241,16 +251,4 @@ $('#collect-form').addEventListener('submit', event => { event.preventDefault();
   }
   content.push(element('p', { class: 'footnote', text: '比例是经随机化校正的估计值，展示时限制在 0–100%；各选项展示值之和可能不等于 100%。误差范围不覆盖选择偏差和虚假回答。' }));
   $('#collect-result').replaceChildren(...content); $('#collect-result').hidden = false;
-}, event.submitter); });
-
-function metric(label, value, note) { return element('div', { class: 'metric' }, [element('span', { class: 'metric-label', text: label }), element('div', { class: 'metric-value', text: value }), element('p', { class: 'metric-note', text: note })]); }
-$('#plan-form').addEventListener('input', () => { $('#plan-result').replaceChildren(element('div', { class: 'empty-state' }, [element('h2', { text: '方案已修改' }), element('p', { text: '点击“评估这个方案”更新结果。' })])); });
-$('#plan-form').addEventListener('submit', event => { event.preventDefault(); guarded(() => {
-  const config = Object.fromEntries([...new FormData($('#plan-form'))].map(([key, value]) => [key, Number(value)]));
-  config.radius /= 100;
-  const result = callCore({ ...config, op: 'plan' });
-  const radius = result.plan.per_question_radius[0];
-  const button = element('button', { class: 'secondary', text: '导出评估结果' });
-  button.addEventListener('click', () => download('privacy-plan.json', { configuration: config, ...result }));
-  $('#plan-result').replaceChildren(element('h2', { text: '这份方案的预期表现' }), metric('当前人数下的误差界', `±${(radius * 100).toFixed(1)} 个百分点`, '95% 同时覆盖本方案的全部题目与选项。'), metric('达到目标精度，预计需要', result.required_samples === null ? '超过 1,000 万人' : `${result.required_samples.toLocaleString('zh-CN')} 人`, `每个选项目标误差不超过 ±${(config.radius * 100).toFixed(2)} 个百分点。`), metric('每人的累计隐私开销 ε', result.plan.total_epsilon.toFixed(2), `${config.questions} 道题 × 每题 ε ${config.epsilon} × ${config.collections} 次采集。`), element('p', { class: 'help', text: radius >= 0.5 ? '当前统计误差很宽。建议先增加样本量、减少题目或比较其他保护参数，再开展调查。' : '该误差界较保守，假设各次随机化独立；不保证样本具有代表性。重复采集的开销已计入，人数按每次采集计算。' }), element('div', { class: 'button-row' }, [button]));
 }, event.submitter); });
