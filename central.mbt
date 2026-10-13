@@ -1,42 +1,42 @@
 ///|
 /// Public input and output bound, independent of a particular dataset.
-pub const CENTRAL_RECORD_LIMIT : Int = 100_000
+pub const CENTRAL_RECORD_LIMIT : Int32 = 100_000
 
 ///|
 /// Construct through make_central_mechanism. All fields depend on public settings.
 pub struct CentralMechanism {
-  category_count : Int
+  category_count : Int32
   requested_epsilon : Double
-  max_contributions : Int
-  threshold : Int
+  max_contributions : Int32
+  threshold : Int32
   epsilon_upper_bound : Double
-  absolute_error_bound : Int
+  absolute_error_bound : Int32
 } derive(ToJson)
 
 ///|
 /// One fresh release. counts contains only noisy, bounded statistics.
 pub struct CentralRelease {
-  schema_version : Int
+  schema_version : Int32
   mechanism : String
   query : String
   adjacency : String
   epsilon : Double
   epsilon_upper_bound : Double
-  max_contributions : Int
-  category_count : Int
-  output_upper : Int
+  max_contributions : Int32
+  category_count : Int32
+  output_upper : Int32
   confidence : Double
-  absolute_error_bound : Int
-  counts : Array[Int]
+  absolute_error_bound : Int32
+  counts : Array[Int32]
 } derive(ToJson)
 
 ///|
 /// Calibrate rational geometric noise conservatively for add/remove-user DP.
 /// For p=t/M, C * -ln(1-p) <= C*p/(1-p) <= epsilon.
 pub fn make_central_mechanism(
-  category_count : Int,
+  category_count : Int32,
   epsilon : Double,
-  max_contributions : Int,
+  max_contributions : Int32,
 ) -> CentralMechanism raise KitError {
   if category_count < 1 || category_count > 256 {
     raise KitError("category count must be between 1 and 256")
@@ -75,7 +75,10 @@ pub fn make_central_mechanism(
 }
 
 ///|
-fn central_draw(random_below : (Int) -> Int, size : Int) -> Int raise KitError {
+fn central_draw(
+  random_below : (Int32) -> Int32,
+  size : Int32,
+) -> Int32 raise KitError {
   let value = random_below(size)
   let numeric = value.to_double()
   if !finite(numeric) ||
@@ -91,12 +94,12 @@ fn central_draw(random_below : (Int) -> Int, size : Int) -> Int raise KitError {
 /// Sample clamp(value + Z, 0, upper) without truncating the geometric tail.
 /// On reaching a public boundary, all remaining tail mass maps to that boundary.
 fn central_sample(
-  value : Int,
-  threshold : Int,
-  gate_size : Int,
-  upper : Int,
-  random_below : (Int) -> Int,
-) -> Int raise KitError {
+  value : Int32,
+  threshold : Int32,
+  gate_size : Int32,
+  upper : Int32,
+  random_below : (Int32) -> Int32,
+) -> Int32 raise KitError {
   let start = central_draw(random_below, 2 * gate_size - threshold)
   if start < threshold {
     return value
@@ -121,16 +124,16 @@ fn central_sample(
 /// remain private to the trusted holder and are never returned by a public API.
 fn central_bounded_counts(
   unit_ids : Array[String],
-  category_ids : Array[Int],
+  category_ids : Array[Int32],
   mechanism : CentralMechanism,
-) -> Array[Int] raise KitError {
+) -> Array[Int32] raise KitError {
   if unit_ids.length() > CENTRAL_RECORD_LIMIT ||
     unit_ids.length() != category_ids.length() {
     raise KitError(
       "central input arrays must match and contain at most 100000 records",
     )
   }
-  let used : Map[String, Int] = Map([])
+  let used : Map[String, Int32] = Map([])
   let counts = Array::make(mechanism.category_count, 0)
   for i = 0; i < unit_ids.length(); i = i + 1 {
     let id = unit_ids[i]
@@ -157,10 +160,10 @@ fn central_bounded_counts(
 
 ///|
 fn central_release(
-  counts : Array[Int],
+  counts : Array[Int32],
   mechanism : CentralMechanism,
   query : String,
-  random_below : (Int) -> Int,
+  random_below : (Int32) -> Int32,
 ) -> CentralRelease raise KitError {
   let noisy = counts.map(count => {
     central_sample(
@@ -194,7 +197,7 @@ fn central_release(
 pub fn central_count(
   unit_ids : Array[String],
   mechanism : CentralMechanism,
-  random_below : (Int) -> Int,
+  random_below : (Int32) -> Int32,
 ) -> CentralRelease raise KitError {
   if mechanism.category_count != 1 {
     raise KitError("count requires a mechanism with one category")
@@ -217,9 +220,9 @@ pub fn central_count(
 /// The cap applies across ALL bins for each stable privacy-unit identifier.
 pub fn central_histogram(
   unit_ids : Array[String],
-  category_ids : Array[Int],
+  category_ids : Array[Int32],
   mechanism : CentralMechanism,
-  random_below : (Int) -> Int,
+  random_below : (Int32) -> Int32,
 ) -> CentralRelease raise KitError {
   let counts = central_bounded_counts(unit_ids, category_ids, mechanism)
   central_release(counts, mechanism, "histogram", random_below)

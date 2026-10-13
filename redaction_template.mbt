@@ -2,7 +2,7 @@
 pub struct FieldRule {
   name : String
   action : String
-  boundaries : Array[Int]
+  boundaries : Array[Int32]
   precision : String
 }
 
@@ -12,21 +12,21 @@ pub extend FieldRule with ToJson::{to_json}
 ///|
 pub impl ToJson for FieldRule with fn to_json(self) {
   let fields : Map[String, Json] = Map([
-    ("name", self.name.to_json()),
-    ("action", self.action.to_json()),
+    ("name", Json(self.name)),
+    ("action", Json(self.action)),
   ])
   if self.action == "age" {
-    fields["boundaries"] = self.boundaries.to_json()
+    fields["boundaries"] = Json(self.boundaries)
   }
   if self.action == "date" {
-    fields["precision"] = self.precision.to_json()
+    fields["precision"] = Json(self.precision)
   }
   Json::object(fields)
 }
 
 ///|
 pub struct RedactionTemplate {
-  schema_version : Int
+  schema_version : Int32
   name : String
   fields : Array[FieldRule]
   spreadsheet_safe : Bool
@@ -38,12 +38,12 @@ pub extend RedactionTemplate with ToJson::{to_json}
 ///|
 pub impl ToJson for RedactionTemplate with fn to_json(self) {
   {
-    "schemaVersion": self.schema_version.to_json(),
+    "schemaVersion": Json(self.schema_version),
     "kind": "moonprivacykit/redaction-template",
-    "name": self.name.to_json(),
+    "name": Json(self.name),
     "settings": {
-      "fields": self.fields.to_json(),
-      "spreadsheetSafe": self.spreadsheet_safe.to_json(),
+      "fields": Json(self.fields),
+      "spreadsheetSafe": Json(self.spreadsheet_safe),
     },
   }
 }

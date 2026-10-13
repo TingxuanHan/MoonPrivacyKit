@@ -72,7 +72,7 @@ test "removing a whole privacy unit changes at most C contributions" {
     let full = central_bounded_counts(ids, bins, m)
     for omitted in ["a", "b", "c"] {
       let remaining_ids : Array[String] = []
-      let remaining_bins : Array[Int] = []
+      let remaining_bins : Array[Int32] = []
       for i = 0; i < ids.length(); i = i + 1 {
         if ids[i] != omitted {
           remaining_ids.push(ids[i])
@@ -202,7 +202,7 @@ test "geometric sampler rejects invalid random integers" {
 ///|
 // Exhaust all initial draws and three later base-4 draws. Unused suffixes are
 // included with their probability, testing tail accumulation at both bounds.
-fn small_sampler_distribution(value : Int) -> Array[Double] raise KitError {
+fn small_sampler_distribution(value : Int32) -> Array[Double] raise KitError {
   let probabilities = Array::make(5, 0.0)
   for first = 0; first < 7; first = first + 1 {
     for suffix = 0; suffix < 64; suffix = suffix + 1 {

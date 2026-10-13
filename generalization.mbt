@@ -10,7 +10,7 @@ pub struct GeneralizedField {
 pub extend GeneralizedField with ToJson::{to_json}
 
 ///|
-fn validate_age_boundaries(values : Array[Int]) -> Unit raise KitError {
+fn validate_age_boundaries(values : Array[Int32]) -> Unit raise KitError {
   if values.is_empty() || values.length() > 32 {
     raise KitError("age rules require 1 to 32 public boundaries")
   }
@@ -24,7 +24,7 @@ fn validate_age_boundaries(values : Array[Int]) -> Unit raise KitError {
 }
 
 ///|
-fn age_categories(boundaries : Array[Int]) -> Array[String] {
+fn age_categories(boundaries : Array[Int32]) -> Array[String] {
   let labels : Array[String] = []
   let mut lower = 0
   for upper in boundaries {
@@ -36,7 +36,7 @@ fn age_categories(boundaries : Array[Int]) -> Array[String] {
 }
 
 ///|
-fn age_value(value : Json) -> Int raise KitError {
+fn age_value(value : Json) -> Int32 raise KitError {
   let age = match value {
     Number(_) => decode_int(value)
     String(text) => {
@@ -58,7 +58,7 @@ fn age_value(value : Json) -> Int raise KitError {
 }
 
 ///|
-fn date_digits(chars : Array[Char], start : Int, length : Int) -> Int {
+fn date_digits(chars : Array[Char], start : Int32, length : Int32) -> Int32 {
   let mut result = 0
   for i = start; i < start + length; i = i + 1 {
     result = result * 10 + chars[i].to_int() - '0'.to_int()
@@ -129,9 +129,9 @@ fn generalized_value(rule : FieldRule, value : Json) -> Json raise KitError {
         index = index + 1
       }
     }
-    age_categories(rule.boundaries)[index].to_json()
+    Json(age_categories(rule.boundaries)[index])
   } else {
-    reduced_date(value, rule.precision).to_json()
+    Json(reduced_date(value, rule.precision))
   }
 }
 
@@ -174,7 +174,7 @@ fn validate_generalization_values(
         None => raise KitError("generalized column is missing")
       }
       for row in table.rows {
-        ignore(generalized_value(rule, row[column].to_json()))
+        ignore(generalized_value(rule, Json(row[column])))
       }
     }
   } else {
@@ -214,7 +214,7 @@ fn apply_generalized_template(
           "remove" => ()
           "mask" => values.push("[REDACTED]")
           "keep" => values.push(row[i])
-          _ => values.push(decode(generalized_value(rule, row[i].to_json())))
+          _ => values.push(decode(generalized_value(rule, Json(row[i]))))
         }
       }
       output.push(values)

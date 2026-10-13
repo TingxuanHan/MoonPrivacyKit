@@ -126,11 +126,11 @@ fn validate_policy(
 
 ///|
 pub struct RedactionAudit {
-  records : Int
-  removed_values : Int
-  masked_values : Int
-  spreadsheet_escapes : Int
-  generalized_values : Int
+  records : Int32
+  removed_values : Int32
+  masked_values : Int32
+  spreadsheet_escapes : Int32
+  generalized_values : Int32
 }
 
 ///|
@@ -139,13 +139,13 @@ pub extend RedactionAudit with ToJson::{to_json}
 ///|
 pub impl ToJson for RedactionAudit with fn to_json(self) {
   let values : Map[String, Json] = Map([
-    ("records", self.records.to_json()),
-    ("removed_values", self.removed_values.to_json()),
-    ("masked_values", self.masked_values.to_json()),
-    ("spreadsheet_escapes", self.spreadsheet_escapes.to_json()),
+    ("records", Json(self.records)),
+    ("removed_values", Json(self.removed_values)),
+    ("masked_values", Json(self.masked_values)),
+    ("spreadsheet_escapes", Json(self.spreadsheet_escapes)),
   ])
   if self.generalized_values > 0 {
-    values["generalized_values"] = self.generalized_values.to_json()
+    values["generalized_values"] = Json(self.generalized_values)
   }
   Json::object(values)
 }
@@ -177,7 +177,7 @@ fn csv_quote(value : String) -> String {
 }
 
 ///|
-fn serialize_csv(table : CsvTable, spreadsheet_safe : Bool) -> (String, Int) {
+fn serialize_csv(table : CsvTable, spreadsheet_safe : Bool) -> (String, Int32) {
   let lines : Array[String] = []
   let mut escapes = 0
   for row in [table.headers] + table.rows {
@@ -201,11 +201,11 @@ fn serialize_csv(table : CsvTable, spreadsheet_safe : Bool) -> (String, Int) {
 pub fn redact_csv(
   input : String,
   policy : FieldPolicy,
-  spreadsheet_safe? : Bool = true,
+  spreadsheet_safe~ : Bool = true,
 ) -> RedactionResult raise KitError {
   let table = parse_csv(input)
   validate_policy(policy, table.headers)
-  let kept : Array[Int] = []
+  let kept : Array[Int32] = []
   for i = 0; i < table.headers.length(); i = i + 1 {
     if !policy.remove.contains(table.headers[i]) {
       kept.push(i)

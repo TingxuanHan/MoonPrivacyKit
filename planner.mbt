@@ -1,9 +1,9 @@
 ///|
 pub struct PrivacyPlan {
-  questions : Int
-  collections : Int
+  questions : Int32
+  collections : Int32
   total_epsilon : Double
-  sample_count : Int
+  sample_count : Int32
   per_question_radius : Array[Double]
 } derive(ToJson)
 
@@ -15,9 +15,9 @@ pub extend PrivacyPlan with ToJson::{to_json}
 /// every collection. This calculation does not enforce participation limits.
 pub fn plan_survey(
   mechanisms : Array[Mechanism],
-  samples : Int,
-  collections? : Int = 1,
-  alpha? : Double = 0.05,
+  samples : Int32,
+  collections~ : Int32 = 1,
+  alpha~ : Double = 0.05,
 ) -> PrivacyPlan raise KitError {
   if mechanisms.is_empty() || mechanisms.length() > 100 {
     raise KitError("a plan must contain between 1 and 100 questions")
@@ -52,8 +52,8 @@ pub fn plan_survey(
 pub fn required_samples(
   mechanism : Mechanism,
   radius : Double,
-  alpha? : Double = 0.05,
-) -> Int? raise KitError {
+  alpha~ : Double = 0.05,
+) -> Int32? raise KitError {
   if !finite(radius) || radius <= 0.0 || radius >= 1.0 {
     raise KitError("target error must be finite and strictly between 0 and 1")
   }

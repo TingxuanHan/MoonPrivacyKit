@@ -11,7 +11,7 @@ pub extend Question with ToJson::{to_json}
 
 ///|
 pub(all) struct Survey {
-  schema_version : Int
+  schema_version : Int32
   id : String
   title : String
   questions : Array[Question]
@@ -22,11 +22,11 @@ pub extend Survey with ToJson::{to_json}
 
 ///|
 pub struct ProtectedResponse {
-  schema_version : Int
+  schema_version : Int32
   mechanism : String
   survey_fingerprint : String
   response_id : String
-  answers : Array[Int]
+  answers : Array[Int32]
 } derive(ToJson, @json.FromJson)
 
 ///|
@@ -48,7 +48,7 @@ fn safe_id(id : String) -> Bool {
 }
 
 ///|
-fn hex_id(id : String, length : Int) -> Bool {
+fn hex_id(id : String, length : Int32) -> Bool {
   id.length() == length &&
   id.iter().all(fn(c) { (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') })
 }
@@ -146,9 +146,9 @@ pub fn protect_response(
   survey : Survey,
   fingerprint : String,
   response_id : String,
-  answers : Array[Int],
-  gates : Array[Int],
-  fallbacks : Array[Int],
+  answers : Array[Int32],
+  gates : Array[Int32],
+  fallbacks : Array[Int32],
 ) -> ProtectedResponse raise KitError {
   let mechanisms = validate_survey(survey)
   if !hex_id(fingerprint, 64) || !hex_id(response_id, 32) {
@@ -162,7 +162,7 @@ pub fn protect_response(
       "answer and random sample counts must match the questionnaire",
     )
   }
-  let protected_answers : Array[Int] = []
+  let protected_answers : Array[Int32] = []
   for i = 0; i < n; i = i + 1 {
     protected_answers.push(
       randomize(mechanisms[i], answers[i], gates[i], fallbacks[i]),
@@ -191,8 +191,8 @@ pub extend QuestionResult with ToJson::{to_json}
 ///|
 pub struct SurveyReport {
   survey_id : String
-  accepted : Int
-  duplicates : Int
+  accepted : Int32
+  duplicates : Int32
   questionnaire_confidence : Double
   questions : Array[QuestionResult]
 } derive(ToJson)
@@ -214,7 +214,7 @@ pub fn aggregate_responses(
       "provide a valid fingerprint and between 1 and 100000 response files",
     )
   }
-  let seen : Map[String, Array[Int]] = Map([])
+  let seen : Map[String, Array[Int32]] = Map([])
   let counts = mechanisms.map(fn(m) { Array::make(m.categories, 0) })
   let mut duplicates = 0
   for response in responses {

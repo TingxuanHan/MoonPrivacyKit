@@ -24,7 +24,7 @@
 
 ## 快速运行
 
-准备 [MoonBit 稳定版工具链](https://www.moonbitlang.com/download) 和 Node.js 22.13.0 或以上版本，确保 `moon`、`node` 在 PATH 中。应用没有第三方 JavaScript 运行时依赖；本地账本使用 Node.js 内置 SQLite。
+准备 [MoonBit 稳定版工具链](https://www.moonbitlang.com/download)（`moon 0.1.20261012`／`moonc v0.10.15` 或更新版本）和 Node.js 22.13.0 或以上版本，确保 `moon`、`node` 在 PATH 中。可用 `moon version --all` 检查；更早的工具链不支持当前 `Int32` 类型名称，需先更新。应用没有第三方 JavaScript 运行时依赖；本地账本使用 Node.js 内置 SQLite。
 
 ```sh
 npm run build

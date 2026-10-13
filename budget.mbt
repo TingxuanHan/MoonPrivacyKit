@@ -2,15 +2,15 @@
 /// Exact accounting units: one unit is 0.000001 epsilon. Persistence and
 /// transaction boundaries are the responsibility of the trusted host.
 pub struct BudgetState {
-  total_units : Int
-  spent_units : Int
-  remaining_units : Int
+  total_units : Int32
+  spent_units : Int32
+  remaining_units : Int32
 } derive(ToJson)
 
 ///|
 pub fn make_budget_state(
-  total_units : Int,
-  spent_units : Int,
+  total_units : Int32,
+  spent_units : Int32,
 ) -> BudgetState raise KitError {
   if total_units < 10_000 || total_units > 1_000_000_000 {
     raise KitError("total budget must be between 0.01 and 1000 epsilon")
@@ -26,7 +26,7 @@ pub fn make_budget_state(
 /// Check subtraction first so an invalid charge can never overflow a sum.
 pub fn charge_budget(
   state : BudgetState,
-  charge_units : Int,
+  charge_units : Int32,
 ) -> BudgetState raise KitError {
   if charge_units < 10_000 || charge_units > 8_000_000 {
     raise KitError("release budget must be between 0.01 and 8 epsilon")

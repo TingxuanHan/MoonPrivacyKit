@@ -2,7 +2,7 @@
 
 ## 工作台
 
-运行 `npm run build` 后运行 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit 稳定版工具链和 Node.js 22.13.0+。Windows 的 `start.cmd` 可以完成构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。
+运行 `npm run build` 后运行 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit `moon 0.1.20261012`／`moonc v0.10.15` 或更新版本，以及 Node.js 22.13.0+；先用 `moon version --all` 确认版本。Windows 的 `start.cmd` 可以完成构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。旧版本出现 `Int32` 未定义时须更新工具链，已有问卷、字段模板和统计账本无需迁移。
 
 ### 隐私问卷
 

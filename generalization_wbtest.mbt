@@ -4,7 +4,7 @@ fn generalization_fixture(rules : Array[Json]) -> Json {
     "schemaVersion": 2,
     "kind": "moonprivacykit/redaction-template",
     "name": "公开分段配置",
-    "settings": { "fields": rules.to_json(), "spreadsheetSafe": true },
+    "settings": { "fields": Json(rules), "spreadsheetSafe": true },
   }
 }
 
@@ -42,7 +42,7 @@ test "version two validates public rule parameters and keeps version one compati
   }
   for precision in ["day", "week", "", "Year"] {
     let rule = generalization_rule("date")
-    template_set(rule, "precision", precision.to_json())
+    template_set(rule, "precision", Json(precision))
     assert_true(redaction_rejects(generalization_fixture([rule]).stringify()))
   }
   let extra = generalization_rule("age")
@@ -73,11 +73,8 @@ test "age bands cover the supported integer domain and fixed boundary endpoints"
     } else {
       "60+"
     }
-    assert_eq(generalized_value(rule, age.to_json()), expected.to_json())
-    assert_eq(
-      generalized_value(rule, age.to_string().to_json()),
-      expected.to_json(),
-    )
+    assert_eq(generalized_value(rule, Json(age)), Json(expected))
+    assert_eq(generalized_value(rule, Json(age.to_string())), Json(expected))
   }
   assert_eq(age_categories([1, 130]), ["0-0", "1-129", "130+"])
 }
@@ -92,8 +89,8 @@ test "date reduction validates Gregorian dates before discarding day and month" 
       ("0001-01-01", "0001-01", "0001"),
       ("9999-12-31", "9999-12", "9999"),
     ] {
-    assert_eq(reduced_date(input.to_json(), "month"), month)
-    assert_eq(reduced_date(input.to_json(), "year"), year)
+    assert_eq(reduced_date(Json(input), "month"), month)
+    assert_eq(reduced_date(Json(input), "year"), year)
   }
   for
     input in [
@@ -103,7 +100,7 @@ test "date reduction validates Gregorian dates before discarding day and month" 
     ] {
     for precision in ["month", "year"] {
       let rejected = try {
-        ignore(reduced_date(input.to_json(), precision))
+        ignore(reduced_date(Json(input), precision))
         false
       } catch {
         KitError(message) => {
@@ -217,14 +214,8 @@ test "handoff distinguishes unchanged identities from public generalized categor
   )
   assert_eq(first.eligible_fields, ["id"])
   assert_eq(first.excluded_fields, [])
-  assert_eq(
-    first.generalized_fields.to_json(),
-    empty.generalized_fields.to_json(),
-  )
-  assert_eq(
-    first.generalized_fields.to_json(),
-    json.generalized_fields.to_json(),
-  )
+  assert_eq(Json(first.generalized_fields), Json(empty.generalized_fields))
+  assert_eq(Json(first.generalized_fields), Json(json.generalized_fields))
   assert_eq(first.generalized_fields[0].categories, [
     "0-17", "18-29", "30-44", "45-59", "60+",
   ])

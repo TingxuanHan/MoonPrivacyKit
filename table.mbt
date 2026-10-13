@@ -16,7 +16,7 @@ pub extend TableMapping with @json.FromJson::{from_json}
 /// Private intermediate data for the trusted holder. Never publish this value.
 pub struct MappedTable {
   unit_ids : Array[String]
-  category_ids : Array[Int]
+  category_ids : Array[Int32]
 } derive(ToJson)
 
 ///|
@@ -99,7 +99,7 @@ fn push_table_record(
   mapped : MappedTable,
   unit : String,
   category : String,
-  bins : Map[String, Int],
+  bins : Map[String, Int32],
   histogram : Bool,
 ) -> Unit raise KitError {
   if unit.is_empty() || unit.length() > 128 || unit.trim() != unit {
@@ -147,7 +147,7 @@ pub fn map_table(
     }
     _ => raise KitError("table query must be count or histogram")
   }
-  let bins : Map[String, Int] = Map([])
+  let bins : Map[String, Int32] = Map([])
   for i = 0; i < mapping.categories.length(); i = i + 1 {
     let label = mapping.categories[i]
     if label.trim().is_empty() || label.length() > 128 || bins.contains(label) {

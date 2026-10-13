@@ -1,14 +1,14 @@
 ///|
 fn template_fixture(query : String) -> Json {
   let settings : Map[String, Json] = Map([
-    ("query", query.to_json()),
+    ("query", Json(query)),
     ("unitField", Json::string("person_id")),
     ("epsilon", Json::string("0.3")),
     ("maxContributions", Json::number(1.0)),
   ])
   if query == "histogram" {
     settings["categoryField"] = Json::string("answer")
-    settings["categories"] = ["满意", "一般", "不满意"].to_json()
+    settings["categories"] = Json(["满意", "一般", "不满意"])
   }
   {
     "schemaVersion": 1,
@@ -73,7 +73,7 @@ test "templates refuse unknown fields including ledger identities and raw record
     }
   }
   let document = template_fixture("count")
-  template_set(field(document, "settings"), "categories", ["yes"].to_json())
+  template_set(field(document, "settings"), "categories", Json(["yes"]))
   assert_true(template_rejects(document.stringify()))
 }
 
@@ -111,7 +111,7 @@ test "templates reject unsupported versions fractional limits and wrong scalar t
 test "template budget decimals retain precision and reject coercion or rounding" {
   for value in ["0.01", "0.010000", "0.123456", "8", "8.000000"] {
     let document = template_fixture("count")
-    template_set(field(document, "settings"), "epsilon", value.to_json())
+    template_set(field(document, "settings"), "epsilon", Json(value))
     assert_eq(parse_statistics_template(document.stringify()).epsilon, value)
   }
   for
@@ -120,7 +120,7 @@ test "template budget decimals retain precision and reject coercion or rounding"
       "1.", "NaN",
     ] {
     let document = template_fixture("count")
-    template_set(field(document, "settings"), "epsilon", value.to_json())
+    template_set(field(document, "settings"), "epsilon", Json(value))
     assert_true(template_rejects(document.stringify()))
   }
 }
@@ -129,18 +129,14 @@ test "template budget decimals retain precision and reject coercion or rounding"
 test "template categories preserve meaning and reject duplicates or multiline values" {
   for categories in [[], [""], ["yes", "yes"], ["line\nbreak"], ["line\rbreak"]] {
     let document = template_fixture("histogram")
-    template_set(
-      field(document, "settings"),
-      "categories",
-      categories.to_json(),
-    )
+    template_set(field(document, "settings"), "categories", Json(categories))
     assert_true(template_rejects(document.stringify()))
   }
   let document = template_fixture("histogram")
   template_set(
     field(document, "settings"),
     "categories",
-    [" yes ", "yes"].to_json(),
+    Json([" yes ", "yes"]),
   )
   assert_eq(parse_statistics_template(document.stringify()).categories, [
     " yes ", "yes",

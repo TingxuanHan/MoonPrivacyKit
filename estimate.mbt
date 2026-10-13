@@ -1,7 +1,7 @@
 ///|
 pub struct CategoryEstimate {
-  category : Int
-  reported_count : Int
+  category : Int32
+  reported_count : Int32
   raw_proportion : Double
   display_proportion : Double
   lower : Double
@@ -13,7 +13,7 @@ pub extend CategoryEstimate with ToJson::{to_json}
 
 ///|
 pub struct Estimate {
-  samples : Int
+  samples : Int32
   confidence : Double
   simultaneous_radius : Double
   informative : Bool
@@ -39,7 +39,7 @@ fn clamp_proportion(x : Double) -> Double {
 /// It assumes independent randomization. It is not a survey-bias correction.
 pub fn error_radius(
   mechanism : Mechanism,
-  samples : Int,
+  samples : Int32,
   alpha : Double,
 ) -> Double raise KitError {
   if samples < 1 || samples > 10_000_000 {
@@ -66,8 +66,8 @@ pub fn error_radius(
 /// to [0, 1]. Clipped category estimates need not sum to one.
 pub fn estimate(
   mechanism : Mechanism,
-  counts : Array[Int],
-  alpha? : Double = 0.05,
+  counts : Array[Int32],
+  alpha~ : Double = 0.05,
 ) -> Estimate raise KitError {
   if counts.length() != mechanism.categories {
     raise KitError("count vector must match the category domain")

@@ -4,7 +4,10 @@ pub fn dispatch(input : String) -> String {
 }
 
 ///|
-pub fn dispatch_central(input : String, random_below : (Int) -> Int) -> String {
+pub fn dispatch_central(
+  input : String,
+  random_below : (Int32) -> Int32,
+) -> String {
   @kit.dispatch_central(input, random_below)
 }
 

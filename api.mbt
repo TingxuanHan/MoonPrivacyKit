@@ -18,7 +18,7 @@ fn[T : @json.FromJson] decode(value : Json) -> T raise KitError {
 }
 
 ///|
-fn decode_int(value : Json) -> Int raise KitError {
+fn decode_int(value : Json) -> Int32 raise KitError {
   match value {
     Number(n, ..) if finite(n) &&
       n >= -2147483648.0 &&
@@ -29,7 +29,7 @@ fn decode_int(value : Json) -> Int raise KitError {
 }
 
 ///|
-fn decode_ints(value : Json) -> Array[Int] raise KitError {
+fn decode_ints(value : Json) -> Array[Int32] raise KitError {
   match value {
     Array(values) => values.map(v => decode_int(v))
     _ => raise KitError("expected an array of integers")
@@ -104,18 +104,18 @@ fn execute_request(request : Json) -> Json raise KitError {
           "batch dimensions must match and contain at most 100000 items",
         )
       }
-      let result : Array[Int] = []
+      let result : Array[Int32] = []
       for i = 0; i < answers.length(); i = i + 1 {
         result.push(randomize(m, answers[i], gates[i], fallbacks[i]))
       }
-      result.to_json()
+      Json(result)
     }
     "plan" => {
       let m = make_mechanism(
         decode_int(field(request, "categories")),
         decode(field(request, "epsilon")),
       )
-      let questions : Int = decode_int(field(request, "questions"))
+      let questions : Int32 = decode_int(field(request, "questions"))
       if questions < 1 || questions > 100 {
         raise KitError("question count must be between 1 and 100")
       }
@@ -131,7 +131,7 @@ fn execute_request(request : Json) -> Json raise KitError {
       )
       {
         "plan": plan.to_json(),
-        "required_samples": needed.to_json(),
+        "required_samples": Json(needed),
         "mechanism": m.to_json(),
       }
     }
@@ -179,10 +179,12 @@ fn execute_request(request : Json) -> Json raise KitError {
         decode(field(request, "input")),
       ).to_json()
     "inspect" =>
-      inspect_fields(
-        decode(field(request, "format")),
-        decode(field(request, "input")),
-      ).to_json()
+      Json(
+        inspect_fields(
+          decode(field(request, "format")),
+          decode(field(request, "input")),
+        ),
+      )
     "redact" => {
       let format : String = decode(field(request, "format"))
       let input : String = decode(field(request, "input"))
@@ -219,7 +221,7 @@ pub fn dispatch(input : String) -> String {
 ///|
 fn prepare_central_request(
   request : Json,
-) -> (Array[Int], CentralMechanism, String) raise KitError {
+) -> (Array[Int32], CentralMechanism, String) raise KitError {
   let op : String = decode(field(request, "op"))
   let categories = match op {
     "centralCount" => 1
@@ -256,7 +258,10 @@ fn prepare_central_request(
 ///|
 /// Low-level host boundary: random_below must supply fresh secure uniform draws.
 /// Validation failures are for the trusted holder, not a public query endpoint.
-pub fn dispatch_central(input : String, random_below : (Int) -> Int) -> String {
+pub fn dispatch_central(
+  input : String,
+  random_below : (Int32) -> Int32,
+) -> String {
   let result : Json = try {
     if input.length() > 10_000_000 {
       raise KitError("request exceeds the 10 MB text limit")

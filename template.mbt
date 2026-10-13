@@ -7,7 +7,7 @@ pub struct StatisticsTemplate {
   category_field : String
   categories : Array[String]
   epsilon : String
-  max_contributions : Int
+  max_contributions : Int32
 }
 
 ///|
@@ -16,19 +16,19 @@ pub extend StatisticsTemplate with ToJson::{to_json}
 ///|
 pub impl ToJson for StatisticsTemplate with fn to_json(self) {
   let settings : Map[String, Json] = Map([
-    ("query", self.query.to_json()),
-    ("unitField", self.unit_field.to_json()),
-    ("epsilon", self.epsilon.to_json()),
-    ("maxContributions", self.max_contributions.to_json()),
+    ("query", Json(self.query)),
+    ("unitField", Json(self.unit_field)),
+    ("epsilon", Json(self.epsilon)),
+    ("maxContributions", Json(self.max_contributions)),
   ])
   if self.query == "histogram" {
-    settings["categoryField"] = self.category_field.to_json()
-    settings["categories"] = self.categories.to_json()
+    settings["categoryField"] = Json(self.category_field)
+    settings["categories"] = Json(self.categories)
   }
   {
     "schemaVersion": 1,
     "kind": "moonprivacykit/statistics-template",
-    "name": self.name.to_json(),
+    "name": Json(self.name),
     "settings": Json::object(settings),
   }
 }

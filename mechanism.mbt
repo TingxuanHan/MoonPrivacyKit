@@ -5,13 +5,13 @@ pub suberror KitError {
 
 ///|
 /// Size of the uniform integer gate used by mechanism version rr24-v1.
-pub const GATE_SIZE : Int = 16_777_216
+pub const GATE_SIZE : Int32 = 16_777_216
 
 ///|
 /// Construct through make_mechanism; probabilities describe the finite sampler.
 pub struct Mechanism {
-  categories : Int
-  threshold : Int
+  categories : Int32
+  threshold : Int32
   requested_epsilon : Double
   effective_epsilon : Double
   truthful_probability : Double
@@ -27,7 +27,7 @@ fn finite(x : Double) -> Bool {
 /// With threshold/GATE_SIZE probability keep the answer; otherwise choose
 /// uniformly from ALL categories. One gate unit is reserved against rounding.
 pub fn make_mechanism(
-  categories : Int,
+  categories : Int32,
   epsilon : Double,
 ) -> Mechanism raise KitError {
   if categories < 2 || categories > 256 {
@@ -62,10 +62,10 @@ pub fn make_mechanism(
 /// gate in [0, GATE_SIZE), fallback in [0, categories). Never publish the samples.
 pub fn randomize(
   mechanism : Mechanism,
-  answer : Int,
-  gate : Int,
-  fallback : Int,
-) -> Int raise KitError {
+  answer : Int32,
+  gate : Int32,
+  fallback : Int32,
+) -> Int32 raise KitError {
   if answer < 0 || answer >= mechanism.categories {
     raise KitError("answer is outside the declared category domain")
   }
