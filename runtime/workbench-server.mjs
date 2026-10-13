@@ -84,6 +84,7 @@ export function createWorkbenchServer({ root, dataDir }) {
     ['/web/style.css', ['web/style.css', 'text/css; charset=utf-8']],
     ['/runtime/client.mjs', ['runtime/client.mjs', 'text/javascript; charset=utf-8']],
     ['/runtime/templates.mjs', ['runtime/templates.mjs', 'text/javascript; charset=utf-8']],
+    ['/runtime/survey-templates.mjs', ['runtime/survey-templates.mjs', 'text/javascript; charset=utf-8']],
     ['/examples/statistics-count-template.json', ['examples/statistics-count-template.json', 'application/json; charset=utf-8']],
     ['/examples/statistics-histogram-template.json', ['examples/statistics-histogram-template.json', 'application/json; charset=utf-8']],
     ['/dist/core.js', ['dist/core.js', 'text/javascript; charset=utf-8']],

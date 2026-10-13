@@ -42,7 +42,10 @@ async function saveDownload(click, file) {
 }
 
 test('create, fill, retry download and aggregate a questionnaire through the visible UI', async () => {
-  await page.getByRole('button', { name: '载入示例', exact: true }).click();
+  await page.locator('#survey-templates summary').click();
+  await page.locator('#survey-preset').selectOption('team');
+  assert.equal(await page.locator('#question-editor .question').count(), 1);
+  await page.locator('#survey-template-apply').click();
   const survey = await saveDownload(() => page.getByRole('button', { name: '导出问卷配置' }).click(), 'survey.json');
   assert.equal(JSON.parse(readFileSync(survey)).questions.length, 2);
   await page.screenshot({ path: join(artifacts, 'survey-desktop.png'), fullPage: true });
@@ -66,6 +69,129 @@ test('create, fill, retry download and aggregate a questionnaire through the vis
   assert.match(await page.locator('#collect-result').innerText(), /当前误差范围很宽/);
   const report = await saveDownload(() => page.getByRole('button', { name: '导出统计报告' }).click(), 'report.json');
   assert.equal(JSON.parse(readFileSync(report)).accepted, 1);
+});
+
+test('questionnaire templates preview before replacement and export matching plans and participation instructions', async () => {
+  await page.reload();
+  await page.locator('#survey-title').fill('尚未导出的草稿');
+  await page.locator('#survey-templates summary').click();
+  await page.locator('#survey-preset').selectOption('course');
+  assert.match(await page.locator('#survey-template-questions').innerText(), /课程节奏/);
+  assert.equal(await page.locator('#survey-title').inputValue(), '尚未导出的草稿');
+  await page.locator('#survey-template-dismiss').click();
+  assert.equal(await page.locator('#survey-title').inputValue(), '尚未导出的草稿');
+  await page.locator('#survey-preset').selectOption('course');
+  await page.locator('#survey-template-apply').click();
+  await page.locator('#survey-collections').fill('3');
+  await page.locator('#question-editor [data-field=epsilon]').nth(0).fill('0.25');
+  await page.locator('#question-editor [data-field=epsilon]').nth(1).fill('0.5');
+  assert.match(await page.locator('#create-meta').innerText(), /单次 ε ≈ 0.75.*3 次累计 ε ≈ 2.25/);
+  await page.locator('#survey-template-save summary').click();
+  const savedTemplate = await saveDownload(() => page.locator('#survey-template-export').click(), 'course-template.json');
+  const value = JSON.parse(readFileSync(savedTemplate));
+  assert.equal(value.settings.plannedCollections, 3);
+  assert.equal(value.settings.questions[0].id, 'pace');
+  assert.equal(value.settings.id, undefined);
+  const a = await saveDownload(() => page.getByRole('button', { name: '导出问卷配置', exact: true }).click(), 'course-a.json');
+  const guide = await saveDownload(() => page.locator('#survey-guide-export').click(), 'course-guide.txt');
+  assert.ok(readFileSync(guide, 'utf8').includes(JSON.parse(readFileSync(a)).id));
+  assert.match(readFileSync(guide, 'utf8'), /ε 约为 2.25/);
+  await page.locator('#survey-templates summary').click();
+  await page.locator('#survey-template-file').setInputFiles(savedTemplate);
+  await page.locator('#survey-template-preview').waitFor({ state: 'visible' });
+  await page.locator('#survey-template-apply').click();
+  assert.equal(await page.locator('#survey-collections').inputValue(), '3');
+  const b = await saveDownload(() => page.getByRole('button', { name: '导出问卷配置', exact: true }).click(), 'course-b.json');
+  const surveyA = JSON.parse(readFileSync(a)), surveyB = JSON.parse(readFileSync(b));
+  assert.notEqual(surveyA.id, surveyB.id);
+  assert.deepEqual(surveyA.questions, surveyB.questions);
+  await page.screenshot({ path: join(artifacts, 'survey-templates-desktop.png'), fullPage: true });
+});
+
+test('invalid imports and replacement cancellation preserve current choices and the exact protected response', async () => {
+  await page.getByRole('button', { name: '填写问卷', exact: true }).click();
+  const survey = join(scratch, 'course-a.json');
+  await page.locator('#fill-file').setInputFiles(survey);
+  await page.getByRole('radio', { name: '合适', exact: true }).check();
+  await page.getByRole('radio', { name: '练习讲解', exact: true }).check();
+  assert.match(await page.locator('#fill-privacy-note').innerText(), /0.75.*1.5/);
+  await page.locator('#fill-file').setInputFiles(join(scratch, 'survey.json'));
+  await page.locator('#fill-replacement').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#protect-button').isEnabled(), false);
+  await page.locator('#fill-cancel').click();
+  assert.equal(await page.getByRole('radio', { name: '合适', exact: true }).isChecked(), true);
+  await page.locator('#protect-button').click();
+  const response = await saveDownload(() => page.locator('#download-response').click(), 'course-response.json');
+  assert.ok(readFileSync(join(scratch, 'course-guide.txt'), 'utf8').includes(JSON.parse(readFileSync(response)).survey_fingerprint));
+  await page.locator('#fill-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from([0xff]) });
+  await page.getByRole('alert').waitFor();
+  assert.match(await page.getByRole('alert').innerText(), /UTF-8/);
+  assert.equal(await page.locator('#response-ready').isVisible(), true);
+  await page.locator('#fill-file').setInputFiles(survey);
+  await page.locator('#fill-replacement').waitFor({ state: 'visible' });
+  const pending = await saveDownload(() => page.locator('#download-response').click(), 'course-response-pending.json');
+  assert.equal(readFileSync(pending, 'utf8'), readFileSync(response, 'utf8'));
+  await page.locator('#fill-cancel').click();
+  const retry = await saveDownload(() => page.locator('#download-response').click(), 'course-response-retry.json');
+  assert.equal(readFileSync(retry, 'utf8'), readFileSync(response, 'utf8'));
+  await page.locator('#fill-file').setInputFiles(join(scratch, 'survey.json'));
+  await page.locator('#fill-replacement').waitFor({ state: 'visible' });
+  await page.locator('#fill-replace').click();
+  assert.equal(await page.locator('#response-ready').isVisible(), false);
+  assert.equal(await page.locator('#answer-fields input:checked').count(), 0);
+  assert.equal(await page.locator('#fill-title').innerText(), '团队反馈问卷');
+});
+
+test('template imports fail safely and long labels remain text on mobile with keyboard confirmation', async () => {
+  await page.getByRole('button', { name: '创建问卷', exact: true }).click();
+  await page.locator('#survey-templates summary').click();
+  const previous = await page.locator('#survey-title').inputValue();
+  const source = JSON.parse(readFileSync(join(scratch, 'course-template.json')));
+  const hostile = '<img src=x onerror=alert(1)>' + '长标题'.repeat(60);
+  source.settings.title = hostile;
+  source.settings.questions[0].title = hostile;
+  await page.locator('#survey-template-file').setInputFiles({ name: 'labels.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(source)) });
+  await page.locator('#survey-template-preview').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#survey-template-preview img').count(), 0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.locator('#survey-template-questions').focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'survey-template-apply');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#survey-title').inputValue(), previous);
+  for (const buffer of [Buffer.from([0xff]), Buffer.from(JSON.stringify({ ...source, answers: ['private-value'] })), Buffer.from(JSON.stringify(source).replace('"schemaVersion":1', '"schemaVersion":1,"schemaVersion":2'))]) {
+    await page.locator('#survey-template-file').setInputFiles({ name: 'invalid.json', mimeType: 'application/json', buffer });
+    await page.getByRole('alert').waitFor();
+    assert.ok(!(await page.getByRole('alert').innerText()).includes('private-value'));
+    assert.equal(await page.locator('#survey-template-preview').isVisible(), false);
+    assert.equal(await page.locator('#survey-title').inputValue(), previous);
+  }
+  await page.locator('#survey-preset').selectOption('service');
+  assert.equal(await page.locator('#notice').isVisible(), false);
+  // An earlier slow file must not overwrite a newer choice or its status.
+  await page.evaluate(() => {
+    const original = File.prototype.arrayBuffer;
+    window.restoreSurveyFileReader = () => { File.prototype.arrayBuffer = original; };
+    File.prototype.arrayBuffer = function () {
+      if (this.name !== 'slow.json') return original.call(this);
+      return new Promise(resolve => { window.finishSurveyFileRead = async () => { resolve(await original.call(this)); }; });
+    };
+  });
+  try {
+    await page.locator('#survey-template-file').setInputFiles({ name: 'slow.json', mimeType: 'application/json', buffer: Buffer.from([0xff]) });
+    await page.waitForFunction(() => typeof window.finishSurveyFileRead === 'function');
+    await page.locator('#survey-preset').selectOption('service');
+    await page.evaluate(async () => { await window.finishSurveyFileRead(); });
+    assert.equal(await page.locator('#survey-template-title').innerText(), '服务体验');
+    assert.equal(await page.locator('#notice').isVisible(), false);
+  } finally { await page.evaluate(() => { window.restoreSurveyFileReader(); delete window.restoreSurveyFileReader; delete window.finishSurveyFileRead; }); }
+  await page.screenshot({ path: join(artifacts, 'survey-template-mobile.png'), fullPage: true });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.locator('#survey-template-dismiss').click();
+  await page.locator('#survey-templates summary').click();
+  await page.setViewportSize({ width: 1365, height: 1000 });
 });
 
 test('redaction preview, exports and stale-result invalidation work without uploading data', async () => {

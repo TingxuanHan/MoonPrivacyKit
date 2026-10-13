@@ -6,12 +6,14 @@
 
 ### 隐私问卷
 
-1. 发起者在“创建问卷”设置问题、每行一个选项和每题 ε，导出问卷配置。首版只支持必答、单选、有限选项；不收集姓名和自由文本。
-2. 将配置文件交给参与者。参与者在可信工作台中打开“填写问卷”，载入配置并填写；点击“生成受保护回答”后，页面清除原始选项，提供响应文件下载。
+1. 发起者在“创建问卷”直接编辑，或展开“从场景模板开始”，选择团队反馈、课程反馈、服务体验或已保存模板，预览后明确应用。复核题目、每行一个选项、每题 ε 与计划次数，导出问卷配置和参与说明。首版只支持必答、单选、有限选项；不收集姓名和自由文本。
+2. 补充调查目的、收集渠道、结果用途与保留期限，把配置和说明一起交给参与者。参与者在可信工作台中打开“填写问卷”，复核开销后填写；点击“生成受保护回答”后，页面清除原始选项，提供响应文件下载。
 3. 参与者把响应文件交给发起者。文件传递渠道可能暴露参与者身份，应按调查用途选择合适的渠道。
 4. 发起者在“汇总结果”选择原问卷与多个响应文件，查看校正比例、95% 同时置信范围和小样本提示，导出报告。
 
 重复下载同一次生成的响应会得到相同文件。重传时使用该文件；重新填写或重新生成会增加隐私开销。配置或选项顺序改变后指纹会变化，旧响应不能与新配置混用。去重只识别同一响应编号，不能证明每个自然人只参加了一次。
+
+模板保存题目、参数与计划次数，每次应用都会创建新问卷；继续收集已有问卷时，直接发送原配置。更换填写文件不会立即清除已有选择或回答，只有明确确认后才替换；文件无效或取消替换时保留当前状态。刷新仍会清除浏览器中的问卷与回答，须先下载。计划次数只用于组合开销估算，不限制实际参与；详见[问卷模板与参与说明](SURVEY_TEMPLATES.md)。
 
 ### 文件脱敏
 
@@ -47,6 +49,7 @@
 
 ```sh
 node cli/main.mjs init-survey my-survey.json
+node cli/main.mjs survey-guide my-survey.json 1 participation.txt
 node cli/main.mjs protect my-survey.json response-1.json
 node cli/main.mjs aggregate my-survey.json report.json response-1.json
 node cli/main.mjs redact csv examples/sample.csv clean.csv examples/policy.json
@@ -57,6 +60,8 @@ node cli/main.mjs plan examples/plan.json plan-report.json
 ```
 
 `protect` 在终端逐题询问。自动化管道可向其标准输入传入从 0 开始的选项下标数组；不要把真实回答放在命令行参数、共享日志或 Git 仓库中。脱敏会同时写入 `<输出文件>.audit.json`。使用 `private-data/` 和 `reports/` 目录可避免默认被 Git 跟踪，但仍需在提交前检查。
+
+工作台导出的问卷模板可用 `survey-from-template <模板.json> <新问卷.json>` 创建新配置，再用 `survey-guide <问卷.json> <计划采集次数> <新说明.txt>` 导出对应参与说明。两项命令拒绝覆盖已有文件；模板不会保留原问卷编号。
 
 中心化统计另提供 `init-ledger`、`publish`、`publish-table`、`ledger-status` 和 `export-release` 命令，可完成创建预算、发布、查看余额与重试导出。`publish` 接收约定的 JSON 请求，`publish-table` 从 CSV／JSON 表中映射人员标识和类别字段。完整示例见[发布预算与结果复用](RELEASE_LEDGER.md)与[真实表格统计](TABLE_STATISTICS.md)。
 

@@ -40,6 +40,19 @@ fn decode_ints(value : Json) -> Array[Int32] raise KitError {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "parseSurveyTemplate" =>
+      parse_survey_template(decode(field(request, "input"))).to_json()
+    "surveyFromTemplate" =>
+      survey_from_template(
+        parse_survey_template(decode(field(request, "template"))),
+        decode(field(request, "survey_id")),
+      ).to_json()
+    "surveyBudget" =>
+      survey_budget(
+        parse_survey(field(request, "survey").stringify()),
+        decode_int(field(request, "collections")),
+      ).to_json()
+    "parseSurvey" => parse_survey(decode(field(request, "input"))).to_json()
     "parseStatisticsTemplate" =>
       parse_statistics_template(decode(field(request, "input"))).to_json()
     "checkStatisticsTemplate" =>

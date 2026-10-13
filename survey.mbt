@@ -112,6 +112,7 @@ fn require_keys(value : Json, keys : Array[String]) -> Unit raise KitError {
 ///|
 pub fn parse_survey(input : String) -> Survey raise KitError {
   let value = read_json(input)
+  reject_duplicate_table_keys(input)
   require_keys(value, ["schema_version", "id", "title", "questions"])
   ignore(decode_int(field(value, "schema_version")))
   match value {

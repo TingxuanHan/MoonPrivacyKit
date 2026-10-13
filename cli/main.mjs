@@ -8,6 +8,8 @@ import { callCore, validateSurvey, protectResponse, aggregateResponses } from '.
 const help = `MoonPrivacyKit — 本地隐私工具箱
 
 node cli/main.mjs init-survey <新问卷.json>
+node cli/main.mjs survey-from-template <模板.json> <新问卷.json>
+node cli/main.mjs survey-guide <问卷.json> <计划采集次数> <新说明.txt>
 node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs protect <问卷.json> <新回答.json>
 node cli/main.mjs aggregate <问卷.json> <新报告.json> <回答.json>...
@@ -95,6 +97,14 @@ async function main() {
     requireNew(args);
     const template = JSON.parse(readFileSync(new URL('../examples/survey.json', import.meta.url), 'utf8'));
     writeNew(args[0], validateSurvey(template));
+  } else if (command === 'survey-from-template' && args.length === 2) {
+    requireNew([args[1]]);
+    const { parseSurveyTemplate, surveyFromTemplate } = await import('../runtime/survey-templates.mjs');
+    writeNew(args[1], surveyFromTemplate(parseSurveyTemplate(readText(args[0], true))));
+  } else if (command === 'survey-guide' && args.length === 3) {
+    requireNew([args[2]]);
+    const { parseSurvey, participantGuide } = await import('../runtime/survey-templates.mjs');
+    writeNew(args[2], await participantGuide(parseSurvey(readText(args[0], true)), Number(args[1])));
   } else if (command === 'plan' && args.length === 2) {
     requireNew([args[1]]);
     writeNew(args[1], callCore({ ...readJson(args[0]), op: 'plan' }));

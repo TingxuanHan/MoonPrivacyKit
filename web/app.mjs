@@ -1,13 +1,10 @@
 import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/runtime/client.mjs';
 import { initStatistics } from '/web/statistics.mjs';
 import { initRedaction } from '/web/redaction.mjs';
+import { surveyPresets, parseSurveyTemplate, createSurveyTemplate, surveyFromTemplate, parseSurvey, surveyBudget, participantGuide, formatEpsilon } from '/runtime/survey-templates.mjs';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
-const example = { schema_version: 1, id: 'team-feedback-v1', title: '团队反馈示例', questions: [
-  { id: 'satisfaction', title: '你对目前的协作方式满意吗？', options: ['满意', '不满意'], epsilon: 1 },
-  { id: 'priority', title: '你最希望优先改善什么？', options: ['沟通', '工具', '安排'], epsilon: 1 }
-] };
 function element(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
@@ -28,6 +25,11 @@ function notice(message, error = false) {
 }
 function humanError(error) {
   const msg = error.message || '';
+  if (/collection count/.test(msg)) return '计划采集次数须为 1 至 10,000 的整数。';
+  if (/UTF-8/.test(msg)) return '文件不是有效的 UTF-8 文本，请转换编码后重试。当前问卷已保留。';
+  if (/template.*limit|at most 20/.test(msg)) return '问卷模板最多包含 20 道题，文本长度最多 100,000。';
+  if (/template labels/.test(msg)) return '模板标题和选项须为单行，首尾不要留空格。';
+  if (/template name/.test(msg)) return '模板名称须为 1 至 80 个字符的单行文字。';
   if (/integer/.test(msg)) return '人数、选项数和选项编号必须是整数，请修改后重试。';
   if (/no signal/.test(msg)) return '保护配置没有足够的统计信号，请提高 ε 后重新评估。';
   if (/does not belong/.test(msg)) return '有回答文件与当前问卷不匹配。请使用填写时的原始问卷配置。';
@@ -57,7 +59,8 @@ async function guarded(action, button) {
 async function fileText(file) {
   if (!file) throw new Error('JSON file required');
   if (file.size > 4_000_000) throw new Error('file size');
-  return (await file.text()).replace(/^\uFEFF/, '');
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()); }
+  catch { throw new Error('File must be valid UTF-8.'); }
 }
 const fileJson = async file => JSON.parse(await fileText(file));
 function download(name, data, type = 'application/json') {
@@ -79,66 +82,143 @@ initRedaction({ callCore, element, download, notice, statistics, openStatistics:
   const button = $('[data-view="statistics"]'); button.click(); button.focus();
 } });
 
-let surveyId = `survey-${crypto.randomUUID().slice(0, 8)}`;
+let surveyId = `survey-${crypto.randomUUID()}`;
 function questionEditor(question, index) {
   const title = element('input', { value: question.title, required: true, maxLength: 500, 'data-field': 'title' });
-  const options = element('textarea', { value: question.options.join('\n'), required: true, 'data-field': 'options', rows: 3 });
-  const epsilon = element('input', { type: 'number', min: '.01', max: '8', step: 'any', value: question.epsilon, required: true, 'data-field': 'epsilon' });
+  const options = element('textarea', { value: question.options.join('\n'), required: true, 'data-field': 'options', rows: Math.min(6, Math.max(3, question.options.length)) });
+  const epsilon = element('input', { type: 'number', min: '0', max: '8', step: 'any', value: question.epsilon, required: true, 'data-field': 'epsilon' });
   const remove = element('button', { type: 'button', class: 'text-button', text: '删除此题', 'aria-label': `删除第 ${index + 1} 题` });
   remove.addEventListener('click', () => { const current = currentQuestions(); if (current.length > 1) { current.splice(index, 1); renderEditor(current); } else notice('问卷至少保留一道题。', true); });
-  return element('div', { class: 'question' }, [
+  return element('div', { class: 'question', 'data-question-id': question.id }, [
     element('div', { class: 'question-title' }, [element('h3', { text: `问题 ${String(index + 1).padStart(2, '0')}` }), remove]),
     element('label', { class: 'field' }, [document.createTextNode('问题内容'), title]),
     element('div', { class: 'question-fields' }, [element('label', { class: 'field' }, [document.createTextNode('选项（每行一个）'), options]), element('label', { class: 'field' }, [document.createTextNode('每题 ε'), epsilon])])
   ]);
 }
 function currentQuestions() {
-  return $$('#question-editor .question').map((row, i) => ({ id: `q${i + 1}`, title: row.querySelector('[data-field=title]').value.trim(), options: row.querySelector('[data-field=options]').value.split('\n').map(v => v.trim()), epsilon: Number(row.querySelector('[data-field=epsilon]').value) }));
+  return $$('#question-editor .question').map(row => ({ id: row.dataset.questionId, title: row.querySelector('[data-field=title]').value.trim(), options: row.querySelector('[data-field=options]').value.split('\n').map(v => v.trim()), epsilon: Number(row.querySelector('[data-field=epsilon]').value) }));
 }
+const currentSurvey = () => validateSurvey({ schema_version: 1, id: surveyId, title: $('#survey-title').value.trim(), questions: currentQuestions() });
+const plannedCollections = () => Number($('#survey-collections').value);
+const budgetText = b => `${b.questions} 道题 · 每人单次 ε ≈ ${formatEpsilon(b.single_epsilon)} · ${b.collections} 次累计 ε ≈ ${formatEpsilon(b.total_epsilon)}`;
 function updateBudget() {
-  const questions = currentQuestions();
-  $('#create-meta').textContent = `${questions.length} 道题 · 每人单次总 ε = ${questions.reduce((sum, q) => sum + q.epsilon, 0).toFixed(2)}`;
+  try { $('#create-meta').textContent = budgetText(surveyBudget(currentSurvey(), plannedCollections())); }
+  catch { $('#create-meta').textContent = '完善题目、保护参数与计划次数后显示开销'; }
 }
 function renderEditor(questions) { $('#question-editor').replaceChildren(...questions.map(questionEditor)); updateBudget(); }
-$('#question-editor').addEventListener('input', updateBudget);
+$('#create-form').addEventListener('input', updateBudget);
 $('#add-question').addEventListener('click', () => {
   const questions = currentQuestions();
   if (questions.length >= 20) { notice('工作台首版最多编辑 20 道题。', true); return; }
-  renderEditor([...questions, { title: '', options: ['选项一', '选项二'], epsilon: 1 }]);
+  renderEditor([...questions, { id: `q-${crypto.randomUUID()}`, title: '', options: ['选项一', '选项二'], epsilon: 1 }]);
   $('#question-editor .question:last-child input').focus();
 });
-$('#load-example').addEventListener('click', () => { $('#survey-title').value = example.title; surveyId = example.id; renderEditor(example.questions); notice('已载入虚构示例，可修改问题后导出。'); });
+let pendingTemplate = null, templateGeneration = 0;
+function dismissTemplate() {
+  templateGeneration++; pendingTemplate = null;
+  $('#survey-template-preview').hidden = true;
+  $('#survey-template-file').value = ''; $('#survey-preset').value = '';
+}
+function previewTemplate(template, description) {
+  pendingTemplate = template;
+  $('#survey-template-title').textContent = template.name;
+  $('#survey-template-description').textContent = description;
+  $('#survey-template-questions').replaceChildren(...template.settings.questions.map(q => element('li', { text: `${q.title}（${q.options.join(' / ')}；ε = ${formatEpsilon(q.epsilon)}）` })));
+  const survey = { schema_version: 1, id: 'preview', title: template.settings.title, questions: template.settings.questions };
+  $('#survey-template-budget').textContent = budgetText(surveyBudget(survey, template.settings.plannedCollections));
+  $('#survey-template-preview').hidden = false;
+}
+for (const preset of surveyPresets) $('#survey-preset').append(element('option', { value: preset.id, text: preset.name }));
+$('#survey-preset').addEventListener('change', () => {
+  notice('');
+  const preset = surveyPresets.find(item => item.id === $('#survey-preset').value);
+  templateGeneration++; pendingTemplate = null; $('#survey-template-file').value = ''; $('#survey-template-preview').hidden = true;
+  if (preset) previewTemplate(preset.template, preset.description);
+});
+$('#survey-template-file').addEventListener('change', () => guarded(async () => {
+  const ticket = ++templateGeneration;
+  pendingTemplate = null; $('#survey-preset').value = ''; $('#survey-template-preview').hidden = true;
+  try {
+    const text = await fileText($('#survey-template-file').files[0]);
+    if (ticket === templateGeneration) previewTemplate(parseSurveyTemplate(text), '已校验导入的配置。请复核题目和保护参数后应用。');
+  } catch (error) { if (ticket === templateGeneration) throw error; }
+}));
+$('#survey-template-dismiss').addEventListener('click', () => { dismissTemplate(); notice(''); $('#survey-preset').focus(); });
+$('#survey-template-apply').addEventListener('click', () => guarded(() => {
+  if (!pendingTemplate) return;
+  const survey = surveyFromTemplate(pendingTemplate);
+  surveyId = survey.id; $('#survey-title').value = survey.title;
+  $('#survey-collections').value = pendingTemplate.settings.plannedCollections;
+  $('#survey-template-name').value = pendingTemplate.name;
+  renderEditor(survey.questions); dismissTemplate(); $('#survey-templates').open = false;
+  $('#survey-title').focus(); notice('已创建新问卷，请复核后导出配置与参与说明。');
+}));
+$('#survey-template-export').addEventListener('click', () => guarded(() => {
+  const template = createSurveyTemplate($('#survey-template-name').value.trim(), currentSurvey(), plannedCollections());
+  download('questionnaire.survey-template.json', template); notice('问卷模板已导出，可用于创建其他问卷。');
+}, $('#survey-template-export')));
+$('#survey-guide-export').addEventListener('click', () => guarded(async () => {
+  const survey = currentSurvey(), collections = plannedCollections();
+  const instructions = await participantGuide(survey, collections);
+  if (JSON.stringify(survey) !== JSON.stringify(currentSurvey()) || collections !== plannedCollections()) {
+    notice('问卷或计划已修改，请重新下载参与说明。', true); return;
+  }
+  download(`${survey.id}.participation.txt`, instructions, 'text/plain');
+  notice('参与说明已导出。请补充用途、收集渠道与保留期限，连同对应配置一起发送。');
+}, $('#survey-guide-export')));
 $('#create-form').addEventListener('submit', event => { event.preventDefault(); guarded(() => {
-  const survey = validateSurvey({ schema_version: 1, id: surveyId, title: $('#survey-title').value.trim(), questions: currentQuestions() });
+  const survey = currentSurvey();
+  surveyBudget(survey, plannedCollections());
   download(`${survey.id}.survey.json`, survey); notice('问卷配置已导出。参与者可在“填写问卷”中载入。');
 }, event.submitter); });
-renderEditor([example.questions[0]]);
+renderEditor([surveyPresets[0].template.settings.questions[0]]);
 
-let fillSurvey = null, preparedResponse = null, fillGeneration = 0;
-$('#fill-file').addEventListener('change', () => guarded(async () => {
-  const ticket = ++fillGeneration;
-  fillSurvey = preparedResponse = null;
-  $('#answer-form').hidden = $('#response-ready').hidden = true;
-  $('#answer-fields').replaceChildren();
-  const survey = validateSurvey(await fileJson($('#fill-file').files[0]));
-  if (ticket !== fillGeneration) return;
+let fillSurvey = null, preparedResponse = null, pendingFillSurvey = null, fillBusy = false;
+function syncFillControls() {
+  $('#fill-file').disabled = fillBusy;
+  $('#protect-button').disabled = fillBusy || !!pendingFillSurvey;
+  $('#fill-replace').disabled = $('#fill-cancel').disabled = fillBusy;
+}
+function loadFillSurvey(survey) {
   fillSurvey = survey;
+  preparedResponse = pendingFillSurvey = null;
+  $('#response-ready').hidden = $('#fill-replacement').hidden = true;
   $('#fill-title').textContent = survey.title;
-  $('#fill-budget').textContent = `${survey.questions.length} 道题 · 单次总 ε = ${survey.questions.reduce((sum, q) => sum + q.epsilon, 0).toFixed(2)}`;
+  const budget = surveyBudget(survey);
+  $('#fill-budget').textContent = `${budget.questions} 道题 · 单次 ε ≈ ${formatEpsilon(budget.single_epsilon)}`;
+  $('#fill-privacy-note').textContent = `每人完整填写一次的开销上界 ε 约为 ${formatEpsilon(budget.single_epsilon)}；同一人分别生成并提交两次会累计至约 ${formatEpsilon(budget.single_epsilon * 2)}。本工具不限制重复参与。重传请复用原回答文件，不要重新生成。随机化不保证每次选项改变，也不保证匿名。`;
   $('#answer-fields').replaceChildren(...survey.questions.map((q, i) => element('fieldset', {}, [element('legend', { text: q.title }), ...q.options.map((option, j) => element('label', { class: 'radio-option' }, [element('input', { type: 'radio', name: `answer-${i}`, value: j, required: true }), document.createTextNode(option)]))])));
   $('#answer-form').hidden = false;
+  syncFillControls();
+}
+$('#fill-file').addEventListener('change', () => guarded(async () => {
+  if (fillBusy) return;
+  fillBusy = true; pendingFillSurvey = null; $('#fill-replacement').hidden = true; syncFillControls();
+  try {
+    const survey = parseSurvey(await fileText($('#fill-file').files[0]));
+    if (!fillSurvey) loadFillSurvey(survey);
+    else {
+      pendingFillSurvey = survey;
+      $('#fill-replacement-note').textContent = `当前：${fillSurvey.title}。准备载入：${survey.title}（${survey.questions.length} 道题）。`;
+      $('#fill-replacement').hidden = false;
+    }
+  } finally { fillBusy = false; $('#fill-file').value = ''; syncFillControls(); }
 }));
+$('#fill-cancel').addEventListener('click', () => { pendingFillSurvey = null; $('#fill-replacement').hidden = true; syncFillControls(); $('#fill-file').focus(); });
+$('#fill-replace').addEventListener('click', () => { if (pendingFillSurvey && !fillBusy) { loadFillSurvey(pendingFillSurvey); $('#answer-fields input').focus(); } });
 $('#answer-form').addEventListener('submit', event => { event.preventDefault(); guarded(async () => {
-  const ticket = fillGeneration;
-  const answers = fillSurvey.questions.map((_, i) => Number($(`input[name=answer-${i}]:checked`).value));
-  const response = await protectResponse(fillSurvey, answers);
-  if (ticket !== fillGeneration) return;
-  preparedResponse = response;
-  $('#answer-fields').replaceChildren();
-  $('#answer-form').hidden = true;
-  $('#response-ready').hidden = false;
-  notice('已生成受保护回答，原始选择已从表单清除。');
-}, event.submitter); });
+  if (fillBusy || pendingFillSurvey || !fillSurvey || preparedResponse) return;
+  fillBusy = true; syncFillControls();
+  try {
+    const answers = fillSurvey.questions.map((_, i) => Number($(`input[name=answer-${i}]:checked`).value));
+    preparedResponse = await protectResponse(fillSurvey, answers);
+    $('#answer-fields').replaceChildren();
+    $('#answer-form').hidden = true;
+    $('#response-survey-title').textContent = fillSurvey.title;
+    $('#response-ready').hidden = false;
+    notice('已生成受保护回答，原始选择已从表单清除。');
+  } finally { fillBusy = false; syncFillControls(); }
+}); });
 $('#download-response').addEventListener('click', () => { if (preparedResponse) download(`response-${preparedResponse.response_id}.json`, preparedResponse); });
 
 let collectGeneration = 0;
@@ -148,7 +228,7 @@ $('#collect-form').addEventListener('submit', event => { event.preventDefault();
   const ticket = collectGeneration;
   const files = [...$('#collect-files').files];
   if (files.length > 10000 || files.reduce((sum, f) => sum + f.size, 0) > 8_000_000) throw new Error('collection size');
-  const survey = validateSurvey(await fileJson($('#collect-survey').files[0]));
+  const survey = parseSurvey(await fileText($('#collect-survey').files[0]));
   const responses = await Promise.all(files.map(fileJson));
   const report = await aggregateResponses(survey, responses);
   if (ticket !== collectGeneration) return;

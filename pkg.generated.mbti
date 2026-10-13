@@ -52,6 +52,8 @@ pub fn parse_statistics_template(String) -> StatisticsTemplate raise KitError
 
 pub fn parse_survey(String) -> Survey raise KitError
 
+pub fn parse_survey_template(String) -> SurveyTemplate raise KitError
+
 pub fn plan_survey(Array[Mechanism], Int, collections? : Int, alpha? : Double) -> PrivacyPlan raise KitError
 
 pub fn prepare_redaction_handoff(RedactionTemplate, String, String) -> RedactionHandoff raise KitError
@@ -65,6 +67,10 @@ pub fn redact_csv(String, FieldPolicy, spreadsheet_safe? : Bool) -> RedactionRes
 pub fn redact_json(String, FieldPolicy) -> RedactionResult raise KitError
 
 pub fn required_samples(Mechanism, Double, alpha? : Double) -> Int? raise KitError
+
+pub fn survey_budget(Survey, Int) -> SurveyBudget raise KitError
+
+pub fn survey_from_template(SurveyTemplate, String) -> Survey raise KitError
 
 pub fn validate_survey(Survey) -> Array[Mechanism] raise KitError
 
@@ -270,6 +276,14 @@ pub(all) struct Survey {
 pub fn Survey::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Survey::to_json(Self) -> Json
 
+pub struct SurveyBudget {
+  questions : Int
+  collections : Int
+  single_epsilon : Double
+  total_epsilon : Double
+} derive(ToJson)
+pub fn SurveyBudget::to_json(Self) -> Json
+
 pub struct SurveyReport {
   survey_id : String
   accepted : Int
@@ -278,6 +292,15 @@ pub struct SurveyReport {
   questions : Array[QuestionResult]
 } derive(ToJson)
 pub fn SurveyReport::to_json(Self) -> Json
+
+pub struct SurveyTemplate {
+  name : String
+  title : String
+  questions : Array[Question]
+  planned_collections : Int
+}
+pub fn SurveyTemplate::to_json(Self) -> Json
+pub impl ToJson for SurveyTemplate
 
 pub(all) struct TableMapping {
   query : String

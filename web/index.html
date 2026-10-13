@@ -25,20 +25,27 @@
         <nav class="subnav" aria-label="问卷步骤"><button data-step="create" aria-pressed="true">创建问卷</button><button data-step="fill" aria-pressed="false">填写问卷</button><button data-step="collect" aria-pressed="false">汇总结果</button></nav>
         <section id="step-create" class="step">
           <form id="create-form" class="panel">
-            <div class="section-heading"><h2>设置问题</h2><button type="button" id="load-example" class="text-button">载入示例</button></div>
+            <div class="section-heading"><h2>设置问题</h2></div>
+            <details id="survey-templates" class="template-tools"><summary>从场景模板开始</summary>
+              <div class="two-col"><label class="field">调查用途<select id="survey-preset"><option value="">选择一个用途…</option></select></label><label class="file-field">或导入问卷模板（JSON）<input id="survey-template-file" type="file" accept=".json,application/json"></label></div>
+              <div id="survey-template-preview" class="template-preview" hidden><h3 id="survey-template-title"></h3><p id="survey-template-description"></p><ol id="survey-template-questions" class="rule-preview" tabindex="0" aria-label="模板中的全部问题"></ol><p id="survey-template-budget"></p><p>应用会替换当前标题、问题和采集计划，建立一份新问卷。已收集的回答须继续使用原配置汇总；新建问卷不会清除过去的隐私开销。</p><div class="button-row"><button id="survey-template-apply" type="button" class="secondary">替换为此模板</button><button id="survey-template-dismiss" type="button" class="text-button">保留当前问卷</button></div></div>
+            </details>
             <label class="field">问卷标题<input id="survey-title" required maxlength="300" value="团队反馈问卷"></label>
             <div id="question-editor"></div>
             <button type="button" id="add-question" class="secondary">＋ 添加问题</button>
-            <div class="help"><strong>保护强度怎么选？</strong> ε 越小，回答保护越强，估计误差通常越大。每道题分别设置，多题开销会累加。可在“效果评估”中比较方案。</div>
+            <div class="help"><strong>保护强度怎么选？</strong> ε 越小，回答保护越强，估计误差通常越大；为 0 时无法估计真实比例。每道题分别设置，多题开销会累加。可在“效果评估”中比较方案。</div>
+            <label class="field survey-collections">计划让同一人填写几次？<input id="survey-collections" type="number" min="1" max="10000" step="1" value="1" required><span class="hint">用于估算累计开销，不会限制真实参与次数。模板中的 ε 只是起步值，请按用途和样本量复核。</span></label>
+            <details id="survey-template-save" class="template-save"><summary>保存为可复用模板</summary><div class="template-export"><label class="field">模板名称<input id="survey-template-name" maxlength="80" value="我的问卷模板"></label><button id="survey-template-export" type="button" class="secondary">导出问卷模板</button></div><p class="footnote">保存题目、保护参数与计划次数，不保存本次问卷编号或回答。名称、标题和选项中不要写入个人信息。</p></details>
             <div class="actionbar"><span id="create-meta"></span><button class="primary" type="submit">导出问卷配置</button></div>
-            <p class="footnote">将配置文件交给参与者。他们使用“填写问卷”生成受保护回答，再将回答文件交回。</p>
+            <div class="button-row"><button id="survey-guide-export" type="button" class="secondary">下载参与说明</button></div><p class="footnote">把配置和说明一起交给参与者，并补充调查目的、收集渠道与保留期限。修改问卷后须重新导出这两个文件；已有回答仍用填写时的原配置汇总。</p>
           </form>
         </section>
         <section id="step-fill" class="step" hidden>
           <div class="panel"><h2>载入要填写的问卷</h2><p class="muted">先选择组织者提供的问卷配置文件。</p><label class="file-field">问卷配置（JSON）<input type="file" id="fill-file" accept=".json,application/json"></label>
             <div class="help">此功能保护回答内容，传送文件仍可能暴露参与身份。请使用可信的问卷配置与工具页面。</div>
-            <form id="answer-form" hidden><h3 id="fill-title"></h3><div id="answer-fields"></div><div class="actionbar"><span id="fill-budget"></span><button id="protect-button" class="primary" type="submit">生成受保护回答</button></div></form>
-            <div id="response-ready" class="result-box" hidden><h3>回答文件已准备好</h3><p>下载后交给组织者。重复下载使用同一份结果，不重新随机化。</p><button id="download-response" class="primary">下载受保护回答</button></div>
+            <div id="fill-replacement" class="template-preview" hidden><h3>确认更换问卷</h3><p id="fill-replacement-note"></p><p>更换会清除当前选择和已准备的回答。请先下载要保留的回答；重新生成并提交会增加隐私开销。</p><div class="button-row"><button id="fill-replace" class="secondary" type="button">更换并清除当前回答</button><button id="fill-cancel" class="text-button" type="button">继续当前问卷</button></div></div>
+            <form id="answer-form" hidden><h3 id="fill-title"></h3><p id="fill-privacy-note" class="help"></p><div id="answer-fields"></div><div class="actionbar"><span id="fill-budget"></span><button id="protect-button" class="primary" type="submit">生成受保护回答</button></div></form>
+            <div id="response-ready" class="result-box" hidden><h3>回答文件已准备好</h3><p id="response-survey-title"></p><p>下载后交给组织者。重复下载使用同一份结果，不重新随机化。请先保存文件；刷新页面后无法恢复这份回答。</p><button id="download-response" class="primary">下载受保护回答</button></div>
           </div>
         </section>
         <section id="step-collect" class="step" hidden>
