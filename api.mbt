@@ -49,6 +49,32 @@ fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
     "inspectDisclosure" => inspect_disclosure(field(request, "model"))
+    "validateAggregateConfig" =>
+      validate_aggregate_config(field(request, "config"))
+    "splitAggregate" =>
+      split_aggregate(
+        decode_ints(field(request, "values")),
+        decode_ints(field(request, "masks")),
+        decode_int(field(request, "upper")),
+      )
+    "sumAggregateShares" => {
+      let vectors : Array[Json] = decode(field(request, "vectors"))
+      Json(
+        sum_aggregate_shares(
+          vectors.map(v => decode_ints(v)),
+          decode_int(field(request, "dimensions")),
+        ),
+      )
+    }
+    "combineAggregateShares" =>
+      Json(
+        combine_aggregate_shares(
+          decode_ints(field(request, "left")),
+          decode_ints(field(request, "right")),
+          decode_int(field(request, "participants")),
+          decode_int(field(request, "upper")),
+        ),
+      )
     "validateCredentialContext" =>
       validate_credential_context(field(request, "context"))
     "validateCredentialResponse" =>

@@ -10,6 +10,8 @@ pub const CENTRAL_RECORD_LIMIT : Int = 100_000
 
 pub const GATE_SIZE : Int = 16_777_216
 
+pub const SHARE_MODULUS : Int = 16_777_216
+
 pub fn aggregate_responses(Survey, String, Array[ProtectedResponse]) -> SurveyReport raise KitError
 
 pub fn apply_redaction_template(RedactionTemplate, String, String) -> RedactionResult raise KitError
@@ -25,6 +27,8 @@ pub fn charge_budget(BudgetState, Int) -> BudgetState raise KitError
 pub fn check_redaction_template(RedactionTemplate, String, String) -> RedactionCompatibility raise KitError
 
 pub fn check_statistics_template(StatisticsTemplate, String, String) -> TemplateCompatibility raise KitError
+
+pub fn combine_aggregate_shares(Array[Int], Array[Int], Int, Int) -> Array[Int] raise KitError
 
 pub fn dispatch(String) -> String
 
@@ -76,9 +80,15 @@ pub fn redact_json(String, FieldPolicy) -> RedactionResult raise KitError
 
 pub fn required_samples(Mechanism, Double, alpha? : Double) -> Int? raise KitError
 
+pub fn split_aggregate(Array[Int], Array[Int], Int) -> Json raise KitError
+
+pub fn sum_aggregate_shares(Array[Array[Int]], Int) -> Array[Int] raise KitError
+
 pub fn survey_budget(Survey, Int) -> SurveyBudget raise KitError
 
 pub fn survey_from_template(SurveyTemplate, String) -> Survey raise KitError
+
+pub fn validate_aggregate_config(Json) -> Json raise KitError
 
 pub fn validate_credential_context(Json) -> Json raise KitError
 
