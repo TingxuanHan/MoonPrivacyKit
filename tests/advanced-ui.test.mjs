@@ -27,7 +27,10 @@ before(async () => {
 after(async () => { await browser?.close(); await new Promise(r => server?.close(r)); });
 const file = (name, value) => ({ name, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
 const click = name => page.getByRole('button', { name, exact: true }).click();
-async function save(label) { const promise = page.waitForEvent('download'); await click(label); const item = await promise; const path = await item.path(); return readFileSync(path, 'utf8'); }
+async function save(label) {
+  try { const promise = page.waitForEvent('download'); await click(label); const item = await promise; const path = await item.path(); return readFileSync(path, 'utf8'); }
+  catch (error) { throw new Error(`Download failed for ${label}`, { cause: error }); }
+}
 async function api(path, body) { const response = await fetch(origin + '/api/' + path, { method: body ? 'POST' : 'GET', headers: { origin, 'x-moonprivacykit-token': session, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) }); return (await response.json()).data; }
 async function openReview(tab) { await page.goto(origin); await click('发布检查'); if (tab) await click(tab); }
 
@@ -88,14 +91,28 @@ test('browser encrypted shares and signed joint results interoperate with indepe
   await page.goto(origin); await click('协作工具'); await click('联合统计');
   await page.getByLabel('共同确认的联合统计任务').setInputFiles(file('task.json', task)); await click('载入联合任务');
   await page.getByLabel('参与次数', { exact: true }).waitFor();
-  for (let i = 0; i < identities.length; i++) {
-    await page.getByLabel('自己保管的参与方身份文件').setInputFiles(file('identity.json', identities[i]));
-    await page.getByLabel('参与次数', { exact: true }).fill(String(i + 1)); await page.getByLabel('总时长', { exact: true }).fill(String(i + 2));
-    await click('生成分别交付的加密文件'); await page.getByRole('heading', { name: '分别交给 A、B 两个聚合方' }).waitFor();
-    for (const [index, role] of ['A', 'B'].entries()) {
-      const bytes = await save(`下载发给 ${role} 的文件`); assert.equal(bytes, await save(`下载发给 ${role} 的文件`));
-      const packet = JSON.parse(bytes); assert.equal(Object.hasOwn(packet, 'share'), false); acceptAggregatePacket(files[index], packet);
+  const receiver = page;
+  try {
+    for (let i = 0; i < identities.length; i++) {
+      // Each party has its own browser session and private identity. This also
+      // avoids modeling many different people as one burst of browser downloads.
+      page = await browser.newPage({ viewport: { width: 1365, height: 1000 }, acceptDownloads: true });
+      page.on('pageerror', error => errors.push(error.message));
+      page.on('request', request => { if (!request.url().startsWith(origin)) external.push(request.url()); });
+      await page.goto(origin); await click('协作工具'); await click('联合统计');
+      await page.getByLabel('共同确认的联合统计任务').setInputFiles(file('task.json', task)); await click('载入联合任务');
+      await page.getByLabel('参与次数', { exact: true }).waitFor();
+      await page.getByLabel('自己保管的参与方身份文件').setInputFiles(file('identity.json', identities[i]));
+      await page.getByLabel('参与次数', { exact: true }).fill(String(i + 1)); await page.getByLabel('总时长', { exact: true }).fill(String(i + 2));
+      await click('生成分别交付的加密文件'); await page.getByRole('heading', { name: '分别交给 A、B 两个聚合方' }).waitFor();
+      for (const [index, role] of ['A', 'B'].entries()) {
+        const bytes = await save(`下载发给 ${role} 的文件`); assert.equal(bytes, await save(`下载发给 ${role} 的文件`));
+        const packet = JSON.parse(bytes); assert.equal(Object.hasOwn(packet, 'share'), false); acceptAggregatePacket(files[index], packet);
+      }
+      await page.close(); page = receiver;
     }
+  } finally {
+    if (page !== receiver) await page.close(); page = receiver;
   }
   const fp = validateAggregateTask(task).fingerprint;
   const parts = files.map(p => finalizeAggregateNode(p, fp));
