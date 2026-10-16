@@ -48,6 +48,8 @@ fn[T : ToJson] nullable_json(value : T?) -> Json {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "checkPrivacyWorkflow" =>
+      check_privacy_workflow(decode(field(request, "input")))
     "inspectDisclosure" => inspect_disclosure(field(request, "model"))
     "validateAggregateConfig" =>
       validate_aggregate_config(field(request, "config"))

@@ -2,6 +2,7 @@ import { initDisclosure } from './disclosure.mjs';
 import { initPersonQuery } from './person-query.mjs';
 import { initCollaboration } from './collaboration.mjs';
 import { initPlanningTools } from './planning-tools.mjs';
+import { initPrivacyWorkflow } from './privacy-workflow.mjs';
 
 export function initAdvanced({ callCore, element: e, download }) {
   const text = (tag, value, attrs = {}) => e(tag, { ...attrs, text: value });
@@ -57,9 +58,10 @@ export function initAdvanced({ callCore, element: e, download }) {
     return sections.map(s => s.section);
   }
   const ui = { e, text, button, field, file, read, panel, row, note, controller, callCore, download };
-  const [disclosure, person, comparison, versions] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查']]);
+  const [disclosure, person, comparison, versions, workflow] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查'], ['workflow-tool', '隐私流程检查']]);
   initDisclosure(disclosure, ui); initPersonQuery(person, ui);
   initPlanningTools(comparison, versions, ui);
+  initPrivacyWorkflow(workflow, ui);
   const [credential, joint] = tabs(document.querySelector('#view-collaboration'), '协作工具', '按角色保管文件，在资格核验、收卷与联合分析之间减少身份和数据暴露。', [['credential-tool', '匿名参与凭证'], ['joint-tool', '联合统计']]);
   initCollaboration(credential, joint, ui);
 }

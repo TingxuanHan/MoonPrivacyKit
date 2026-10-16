@@ -24,6 +24,8 @@ pub fn central_histogram(Array[String], Array[Int], CentralMechanism, (Int) -> I
 
 pub fn charge_budget(BudgetState, Int) -> BudgetState raise KitError
 
+pub fn check_privacy_workflow(String) -> Json raise KitError
+
 pub fn check_redaction_template(RedactionTemplate, String, String) -> RedactionCompatibility raise KitError
 
 pub fn check_statistics_template(StatisticsTemplate, String, String) -> TemplateCompatibility raise KitError

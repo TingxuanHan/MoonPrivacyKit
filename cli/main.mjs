@@ -13,6 +13,7 @@ node cli/main.mjs survey-guide <问卷.json> <计划采集次数> <新说明.txt
 node cli/main.mjs assess-survey <问卷.json> <每次人数> <目标误差百分点> <采集次数> <新评估.json>
 node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs inspect-reports <报表模型.json> <新检查.json>
+node cli/main.mjs check-workflow <流程方案.json> <新检查.json>
 node cli/main.mjs compare-plans <csv|json> <原表> <候选配置.json> <内部比较.json>
 node cli/main.mjs compare-versions <csv|json> <第一版> <csv|json> <第二版> <对应配置.json> <内部检查.json>
 node cli/main.mjs scan-fields <csv|json> <原表> <内部扫描.json>
@@ -133,6 +134,14 @@ async function main() {
   } else if (command === 'scrub-text' && args.length === 2) {
     requireNew([args[1]]);
     writeNew(args[1], callCore({op:'scrubText',input:readText(args[0],true)}));
+  } else if (command === 'check-workflow' && args.length === 2) {
+    requireNew([args[1]]);
+    const { checkPrivacyWorkflow } = await import('../runtime/privacy-workflow.mjs');
+    const report = checkPrivacyWorkflow(readText(args[0], true));
+    writeNew(args[1], report);
+    console.log(`Workflow: ${report.status}. No data processed or budget charged.`);
+    if (report.status !== 'compatible') process.exitCode = report.status === 'blocked' ? 2 : 3;
+    return;
   } else if (command === 'inspect-reports' && args.length === 2) {
     requireNew([args[1]]);
     writeNew(args[1], callCore({ op: 'inspectDisclosure', model: readJson(args[0]) }));

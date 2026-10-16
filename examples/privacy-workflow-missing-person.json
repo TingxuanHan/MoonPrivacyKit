@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "kind": "moonprivacykit/privacy-workflow",
+  "scope": "survey-october",
+  "budget": { "total_epsilon_units": 1000000, "spent_epsilon_units": 200000 },
+  "sources": [
+    { "id": "source", "kind": "private_table", "fields": ["person", "score", "email"], "person_field": "person", "selection_origin": "public" }
+  ],
+  "steps": [
+    { "id": "minimized", "op": "select_fields", "input": "source", "settings": { "keep": ["score"] } },
+    { "id": "bounded", "op": "bound_person", "input": "minimized", "settings": { "max_rows": 3, "origin": "public" } },
+    { "id": "total", "op": "aggregate", "input": "bounded", "settings": { "query": "count", "value_field": "", "upper": 1, "origin": "public" } },
+    { "id": "release", "op": "dp_release", "input": "total", "settings": { "epsilon_units": 300000, "trust": "trusted_holder" } }
+  ],
+  "outputs": [ { "node": "release", "audience": "public" } ]
+}

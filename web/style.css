@@ -292,3 +292,28 @@ summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 5px 0
 #view-review input, #view-collaboration input { min-width: 0; max-width: 100%; }
 #view-review .result-box, #view-collaboration .result-box { margin-top: 18px; }
 @media(max-width:600px) { .constraint-item { grid-template-columns: minmax(0,1fr); } }
+
+.workflow-sequence { display: grid; gap: 16px; list-style: none; padding: 0; }
+.workflow-step, .workflow-source { min-width: 0; padding: 16px; border: 1px solid #d7e4de; border-radius: 8px; background: #f8faf9; }
+.workflow-source { margin: 12px 0; }
+.workflow-step .field, .workflow-source .field { min-width: 0; }
+.workflow-step .section-heading { margin-bottom: 12px; }
+.workflow-step h3 { margin: 0; }
+.workflow-step summary { cursor: pointer; overflow-wrap: anywhere; }
+.workflow-step summary span { display: block; margin: 6px 0 0 20px; color: #465f55; font-weight: normal; }
+.workflow-step details[open] summary { margin-bottom: 18px; }
+.workflow-step details { margin: 0; }
+#workflow-tool .button-row { align-items: end; }
+#workflow-tool .button-row .field { margin-bottom: 0; }
+.workflow-step .button-row { margin: 0; }
+.workflow-output { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; gap: 12px; align-items: end; margin-bottom: 12px; }
+.workflow-output .field { min-width: 0; margin: 0; }
+.workflow-trace { display: grid; gap: 12px; padding-left: 24px; }
+.workflow-trace li { padding-left: 8px; }
+.workflow-trace span { display: block; color: #465f55; margin-top: 4px; }
+.workflow-issue { border-left: 3px solid #a44825; padding: 4px 16px; margin: 18px 0; background: #fff8f2; }
+.workflow-budget { padding: 12px; background: #f1f5f3; border-radius: 6px; }
+#workflow-result[data-status="blocked"], #workflow-result[data-status="inconclusive"] { border-top: 3px solid #a44825; }
+#workflow-result[data-status="compatible"] { border-top: 3px solid #126957; }
+#workflow-tool select { min-width: 0; max-width: 100%; }
+@media(max-width:600px) { .workflow-output { grid-template-columns: minmax(0,1fr); } .workflow-step, .workflow-source { padding: 12px; } }

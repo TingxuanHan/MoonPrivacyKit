@@ -9,9 +9,9 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs tests/templates.test.mjs tests/redaction-templates.test.mjs tests/generalization.test.mjs tests/survey-templates.test.mjs tests/survey-assessment.test.mjs tests/report-export.test.mjs tests/disclosure.test.mjs tests/person-query.test.mjs tests/credentials.test.mjs tests/secure-aggregation.test.mjs tests/planning-tools.test.mjs",
+    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs tests/templates.test.mjs tests/redaction-templates.test.mjs tests/generalization.test.mjs tests/survey-templates.test.mjs tests/survey-assessment.test.mjs tests/report-export.test.mjs tests/disclosure.test.mjs tests/person-query.test.mjs tests/credentials.test.mjs tests/secure-aggregation.test.mjs tests/planning-tools.test.mjs tests/workflow.test.mjs",
     "start": "node scripts/serve.mjs",
-    "test:ui": "node --test tests/ui.test.mjs tests/report-ui.test.mjs tests/advanced-ui.test.mjs",
+    "test:ui": "node --test tests/ui.test.mjs tests/report-ui.test.mjs tests/advanced-ui.test.mjs tests/workflow-ui.test.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
