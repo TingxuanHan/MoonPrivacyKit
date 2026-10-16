@@ -10,6 +10,7 @@
 - [NIST 隐私集合求交与集合运算](https://csrc.nist.gov/projects/pec/psi)：区分交集成员、交集数量和交集聚合，为跨团队样本重叠统计选型。
 - [NIST 零知识证明](https://csrc.nist.gov/projects/pec/zkproof)：说明在不揭示秘密见证的情况下证明数学关系的能力，作为后续输入范围与一致性验证的参考。
 - [NIST IR 8053](https://csrc.nist.gov/pubs/ir/8053/final)：去标识化与剩余隐私风险的背景资料，用于字段处理、泛化及风险说明。
+- [ARX](https://github.com/arx-deidentifier/arx)（Apache-2.0）：[候选方案探索与可用性分析](https://arx.deidentifier.org/anonymization-tool/)的方法和产品参考，用于规划有限候选比较；当前没有复制代码，也不将 k-匿名、泛化或方案搜索声称为本项目发明。
 - [W3C Web Cryptography](https://www.w3.org/TR/webcrypto/)：浏览器安全随机数接口规范。
 
 ## 后续密码后端候选
@@ -19,11 +20,13 @@
 - [MP-SPDZ](https://github.com/data61/MP-SPDZ)：用于比较不同安全模型下的 MPC 协议与计算成本。主体采用 BSD-3-Clause，附带组件另有条款，详见其 [License.txt](https://github.com/data61/MP-SPDZ/blob/master/License.txt)。项目明确说明其实现并不等于已通过生产级安全审查，本项目拟先用于原型与基准评估。
 - [Microsoft SEAL](https://github.com/microsoft/SEAL)：MIT 许可的同态加密库，作为有界密文算术的候选后端。密钥管理、结果开放方式及密文和计算开销仍需由应用设计与验证。
 
-检索核对日期：2026-10-05。技术路线是结合项目场景作出的设计选择，不代表上述机构对本项目的背书或安全认证。
+原方法选型日期：2026-10-05；相邻项目与新增工具参考于 2026-10-16 补充核对。技术路线是结合项目场景作出的设计选择，不代表上述机构对本项目的背书或安全认证。
 
 ## 相邻 MoonBit 项目
 
-- [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget)，Apache-2.0：差分隐私机制与预算账本。
+- [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget)，Apache-2.0：已有随机响应等差分隐私机制、预算策略、账本预留／提交／回滚、查询计划、批处理和审计导出。本项目拟接入预算接口，在其上连接实际任务；当前原型尚未引入此依赖。
+- [moon_scrub](https://github.com/yyqdbngt/moon-scrub)，Apache-2.0，模块名 `123123213weqw/moon_scrub`：已有离线敏感信息扫描、脱敏、结构化字段、JSON／日志及流式管道。本项目拟复用检测与脱敏接口；当前没有自动检测能力，也尚未引入此依赖。
+- [MoonSentinel](https://github.com/STW135-2026/moonsentinel)，Apache-2.0：已有单批次 k-匿名、l-diversity、用途／接收方核验和发布回执。作为功能对照，不将单次风险门禁另作本项目贡献。
 - [MoonRedactKit](https://github.com/xvkong834/MoonRedactKit)，Apache-2.0：敏感信息识别与脱敏策略。
 
-MoonPrivacyKit 当前聚焦问卷配置、本地回答保护、结果估计与真实数据字段处理。长期持续开发更多实用隐私工具，通过一致的交互、可复用配置与经过验证的流程，让用户便于选用、组合和切换方案；上述方法和后端为具体功能提供支撑。相关基础能力已有生态实现，不把整个隐私领域描述为生态空白。当前初始核心独立实现，第三方运行时依赖以模块清单为准；后续引入代码或依赖时同步维护许可和来源。
+当前原型独立实现，基础机制、预算与脱敏能力不作为独占创新点。新增工作重点是有限处理方案的风险／信息损失比较和指定条件下的跨版本联合检查，二者均待开发。与上游的版本、许可、实际依赖状态及扩展分工见[生态定位](ECOSYSTEM_POSITIONING.md)，具体新增范围见[工具设计](PRIVACY_PLANNING_TOOLS.md)。相关基础能力已有生态实现，不把整个隐私领域描述为生态空白；引入代码或依赖时同步维护许可与来源。

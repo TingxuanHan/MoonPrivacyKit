@@ -4,6 +4,8 @@
 
 用 MoonBit 构建的隐私工具库与中文本地工作台，当前支持隐私问卷、真实数据字段处理、效果评估和带预算管理的隐私统计。长期持续开发更多实用工具，以一致的操作和配置方式帮助用户按需求选用、组合与切换隐私保护方案。
 
+后续开发重点是[处理方案比较与跨版本联合检查](docs/PRIVACY_PLANNING_TOOLS.md)，并适配已有 MoonBit 基础组件。差分隐私机制、预算管理和脱敏已有生态实现；本项目不把这些基础能力作为原创贡献。当前原型尚未依赖 moon-privacy-budget 或 moon_scrub，接入计划、能力重叠与新增工作见[生态定位](docs/ECOSYSTEM_POSITIONING.md)。
+
 ![效果评估工作台](docs/images/workbench.png)
 
 ## 现在可以做什么
@@ -96,6 +98,6 @@ MoonBit 核心可面向 Wasm 和 JavaScript 编译；当前工作台运行的是
 
 项目长期目标是持续扩展、统一易用的隐私工具平台。后续将提供更多字段处理与统计任务、样本重叠核对、联合分析和加密数据委托计算等工具；通过任务向导、可复用配置及流程模板，让用户在兼容条件下衔接工具，按需求切换方案，减少重复学习与配置。
 
-中心化差分隐私核心、发布账本、真实表格命令行、工作台、统计与字段模板，以及字段处理结果转入统计均已实现。[年龄分段与日期降精度](docs/FIELD_GENERALIZATION.md)已接入模板、预览和后续类别统计；人员标识必须保持原样。[问卷场景模板与参与说明](docs/SURVEY_TEMPLATES.md)已支持三个常见用途和配置复用，[逐题精度评估](docs/SURVEY_ASSESSMENT.md)已直接连接问卷编辑器，[可读报告](docs/READABLE_REPORTS.md)已统一结果交付方式。下一步完善按任务选择工具的向导，帮助使用者根据数据来源、用途和信任条件进入合适流程。通用流程引擎、方案切换及新增密码计算工具尚未实现。具体交付内容见[开发路线](docs/ROADMAP.md)，共同使用方式和支撑技术见[工具与技术规划](docs/TECHNOLOGY_PLAN.md)，申报正文见 [APPLICATION.md](docs/APPLICATION.md)。
+中心化差分隐私核心、发布账本、真实表格命令行、工作台、统计与字段模板，以及字段处理结果转入统计均已实现。[年龄分段与日期降精度](docs/FIELD_GENERALIZATION.md)已接入模板、预览和后续类别统计；人员标识必须保持原样。[问卷场景模板与参与说明](docs/SURVEY_TEMPLATES.md)、[逐题精度评估](docs/SURVEY_ASSESSMENT.md)和[可读报告](docs/READABLE_REPORTS.md)可用于完整问卷任务。下一步先适配已有检测与预算接口，再开发有限候选比较和两版联合检查；这些新增能力与任务向导、通用流程引擎及密码计算工具目前均未实现。具体交付内容见[开发路线](docs/ROADMAP.md)，共同使用方式和支撑技术见[工具与技术规划](docs/TECHNOLOGY_PLAN.md)，申报正文见 [APPLICATION.md](docs/APPLICATION.md)。
 
 采用 Apache-2.0。随机响应使用公开统计方法，核心实现独立编写，不宣称发明新的隐私算法，也不把整个 MoonBit 隐私领域视为生态空白。[参考资料与相邻项目](docs/REFERENCES.md) 说明了项目范围与许可来源。
