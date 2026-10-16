@@ -2,6 +2,7 @@ import { callCore, validateSurvey, protectResponse, aggregateResponses } from '/
 import { initStatistics } from '/web/statistics.mjs';
 import { initRedaction } from '/web/redaction.mjs';
 import { initPlanner } from '/web/planner.mjs';
+import { initAdvanced } from '/web/advanced.mjs';
 import { reportActions } from '/web/report-actions.mjs';
 import { surveyPresets, parseSurveyTemplate, createSurveyTemplate, surveyFromTemplate, parseSurvey, surveyBudget, participantGuide, formatEpsilon } from '/runtime/survey-templates.mjs';
 
@@ -83,6 +84,7 @@ function activate(group, target, attribute) {
 for (const button of $$('[data-view]')) button.addEventListener('click', () => activate('view', button.dataset.view, 'view'));
 for (const button of $$('[data-step]')) button.addEventListener('click', () => activate('step', button.dataset.step, 'step'));
 const statistics = initStatistics({ callCore, element, download });
+initAdvanced({ callCore, element, download });
 initRedaction({ callCore, element, download, notice, statistics, openStatistics: () => {
   const button = $('[data-view="statistics"]'); button.click(); button.focus();
 } });

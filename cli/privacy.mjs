@@ -12,6 +12,7 @@ issue-credential <签发库.sqlite> <单个账号资格.json> <签发请求.json
 finalize-credential <公开配置.json> <私有状态.json> <签名响应.json> <凭证.json>
 init-collector <新收卷库.sqlite> <公开配置.json> <问卷.json>
 redeem-credential <收卷库.sqlite> <凭证.json> <受保护回答.json> <回执.json>
+redeem-submission <收卷库.sqlite> <参与提交包.json> <回执.json>
 export-collected <收卷库.sqlite> <受保护回答集合.json>
 aggregate-identity <参与方代号> <私有身份.json> <公开身份.json>
 init-aggregate-node <新节点库.sqlite> <A|B> <公开节点.json>
@@ -37,6 +38,7 @@ async function main(){
   else if(command==='finalize-credential'&&a.length===4){fresh([a[3]]);write(a[3],await finalizeCredential(read(a[0]),read(a[1]),read(a[2])));}
   else if(command==='init-collector'&&a.length===3){fresh([a[0]]);await createCredentialCollector(a[0],read(a[1]),read(a[2]));}
   else if(command==='redeem-credential'&&a.length===4){fresh([a[3]]);write(a[3],await redeemCredential(a[0],{token:read(a[1]),response:read(a[2])}));}
+  else if(command==='redeem-submission'&&a.length===3){fresh([a[2]]);write(a[2],await redeemCredential(a[0],read(a[1])));}
   else if(command==='export-collected'&&a.length===2){fresh([a[1]]);write(a[1],collectedCredentialResponses(a[0]));}
   else if(command==='aggregate-identity'&&a.length===3){fresh([a[1],a[2]]);const identity=createAggregateIdentity(a[0]);write(a[1],identity);write(a[2],identity.participant);}
   else if(command==='init-aggregate-node'&&a.length===3){fresh([a[0],a[2]]);write(a[2],createAggregateNode(a[0],a[1]));}

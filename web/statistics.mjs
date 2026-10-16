@@ -106,7 +106,7 @@ export function initStatistics({ callCore, element, download }) {
       const button = element('button', { type: 'button', class: 'secondary', text: '查看报告', 'aria-label': `查看第 ${data.total - data.offset - data.items.indexOf(item)} 次报告` });
       button.addEventListener('click', () => run(async () => showReport(await api(`${projectPath()}/releases/${item.request_id}`))));
       $('history').append(element('div', { class: 'history-row' }, [element('div', {}, [
-        element('h3', { text: `第 ${data.total - data.offset - data.items.indexOf(item)} 次 · ${item.query === 'count' ? '计数' : '类别分布'}` }),
+        element('h3', { text: `第 ${data.total - data.offset - data.items.indexOf(item)} 次 · ${item.query === 'count' ? '计数' : item.query === 'bounded_sum' ? '整数总和' : '类别分布'}` }),
         element('p', { text: `ε ${item.epsilon} · 每人最多 ${item.max_contributions} 条${item.categories.length ? ` · ${item.categories.length} 个公开类别` : ''}` }),
       ]), button]));
     }
@@ -149,9 +149,9 @@ export function initStatistics({ callCore, element, download }) {
     const r = result.report;
     const interval = value => `${Math.max(0, value - r.absolute_error_bound)}–${Math.min(r.output_upper, value + r.absolute_error_bound)}`;
     const save = reportActions({ kind: 'statistics', report: result, filename: `private-statistics-${result.release_id}`, jsonLabel: '下载这份报告', jsonClass: 'primary', element, download });
-    const nodes = [element('div', { class: 'result-heading' }, [element('h2', { text: r.query === 'count' ? '受保护计数' : '受保护类别分布' }), save]),
-      element('p', { class: 'muted', text: `本次 ε ${r.epsilon} · 每人最多 ${r.max_contributions} 条 · 95% 同时绝对误差界 ±${r.absolute_error_bound}` })];
-    if (r.query === 'count') nodes.push(element('div', { class: 'stats-count', text: String(r.counts[0]) }), element('p', { text: `误差范围：${interval(r.counts[0])}` }));
+    const nodes = [element('div', { class: 'result-heading' }, [element('h2', { text: r.query === 'count' ? '受保护计数' : r.query === 'bounded_sum' ? '受保护总和' : '受保护类别分布' }), save]),
+      element('p', { class: 'muted', text: `本次 ε ${r.epsilon} · 每人最多 ${r.max_contributions} ${r.query === 'bounded_sum' ? '数值单位' : '条'} · 95% 同时绝对误差界 ±${r.absolute_error_bound}` })];
+    if (r.query !== 'histogram') nodes.push(element('div', { class: 'stats-count', text: String(r.counts[0]) }), element('p', { text: `误差范围：${interval(r.counts[0])}` }));
     else {
       const maximum = Math.max(1, ...r.counts);
       nodes.push(element('ul', { class: 'stats-bars' }, r.counts.map((count, i) => element('li', {}, [

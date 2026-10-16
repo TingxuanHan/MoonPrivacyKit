@@ -272,7 +272,7 @@ pub fn inspect_disclosure(input : Json) -> Json raise KitError {
   let repairs : Array[Json] = []
   let mut attempts = 0
   if status == "risk_found" {
-    // Bounded candidate search: single draft removals, then pairs. The list is
+    // Bounded candidate search: single draft removals and pairs. The list is
     // neither an exhaustive search nor a claim of minimum utility loss.
     for first in 0..<equations.length() {
       if equations[first].published {

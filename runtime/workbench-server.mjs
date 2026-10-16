@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createLedger, ledgerStatus, listReleases, savedRelease } from './ledger.mjs';
 import { publishTableRelease } from './table.mjs';
+import { publishPersonQuery } from './person-query.mjs';
 
 const MAX_BODY = 12_000_000;
 const NAME = /^[\p{L}\p{N} _-]{1,60}$/u;
@@ -89,6 +90,11 @@ export function createWorkbenchServer({ root, dataDir }) {
     ['/runtime/report-export.mjs', ['runtime/report-export.mjs', 'text/javascript; charset=utf-8']],
     ['/web/report-actions.mjs', ['web/report-actions.mjs', 'text/javascript; charset=utf-8']],
     ['/web/planner.mjs', ['web/planner.mjs', 'text/javascript; charset=utf-8']],
+    ...['advanced', 'disclosure', 'person-query', 'collaboration', 'analysis-worker'].map(name => [`/web/${name}.mjs`, [`web/${name}.mjs`, 'text/javascript; charset=utf-8']]),
+    ['/runtime/joint-client.mjs', ['runtime/joint-client.mjs', 'text/javascript; charset=utf-8']],
+    ['/dist/credential-client.js', ['dist/credential-client.js', 'text/javascript; charset=utf-8']],
+    ['/dist/credential-client.js.LEGAL.txt', ['dist/credential-client.js.LEGAL.txt', 'text/plain; charset=utf-8']],
+    ['/examples/disclosure.json', ['examples/disclosure.json', 'application/json; charset=utf-8']],
     ['/examples/statistics-count-template.json', ['examples/statistics-count-template.json', 'application/json; charset=utf-8']],
     ['/examples/statistics-histogram-template.json', ['examples/statistics-histogram-template.json', 'application/json; charset=utf-8']],
     ['/dist/core.js', ['dist/core.js', 'text/javascript; charset=utf-8']],
@@ -164,7 +170,7 @@ export function createWorkbenchServer({ root, dataDir }) {
           send(201, { ok: true, data: { id, name, status } }); return;
         }
       }
-      const match = /^\/api\/projects\/([A-Za-z0-9_-]+)\/(status|releases|publish)(?:\/([A-Za-z0-9._:-]+))?$/.exec(url.pathname);
+      const match = /^\/api\/projects\/([A-Za-z0-9_-]+)\/(status|releases|publish|publish-person)(?:\/([A-Za-z0-9._:-]+))?$/.exec(url.pathname);
       if (!match) reject('NOT_FOUND', 404, '找不到该操作。');
       const [, id, operation, requestId] = match;
       const file = await existing(id);
@@ -178,6 +184,17 @@ export function createWorkbenchServer({ root, dataDir }) {
           if (!/^\d{1,8}$/.test(offset)) reject('INVALID_REQUEST', 400, '无效的历史页码。');
           send(200, { ok: true, data: listReleases(file, { offset: Number(offset) }) }); return;
         }
+      }
+      if (request.method === 'POST' && operation === 'publish-person' && !requestId && !url.search) {
+        const input = await body(request);
+        shape(input, ['plan', 'leftFormat', 'left', 'rightFormat', 'right', 'requestId', 'epsilon']);
+        let result;
+        try { result = publishPersonQuery(file, input); }
+        catch (error) {
+          if (error.name === 'LedgerError') throw error;
+          reject('INVALID_TABLE', 400, '两份表格或连接设置不正确，请检查同一人员标识、整数值列与贡献上限。未生成报告。');
+        }
+        send(200, { ok: true, data: result }); return;
       }
       if (request.method === 'POST' && operation === 'publish' && !requestId && !url.search) {
         const input = await body(request); shape(input, ['format', 'input', 'plan']);

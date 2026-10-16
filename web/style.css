@@ -283,3 +283,12 @@ summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 5px 0
 }
 @media(prefers-reduced-motion:reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 @media(max-height:850px) { .survey-summary { position: static; } }
+
+.constraint-list { display: grid; gap: 12px; margin: 16px 0; }
+.constraint-item { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; border: 1px solid #d7e4de; border-left: 3px solid #126957; border-radius: 8px; padding: 16px; background: #f8faf9; }
+.constraint-item .field { margin: 0; }
+.constraint-item button { justify-self: start; align-self: end; }
+#view-review p, #view-collaboration p { overflow-wrap: anywhere; }
+#view-review input, #view-collaboration input { min-width: 0; max-width: 100%; }
+#view-review .result-box, #view-collaboration .result-box { margin-top: 18px; }
+@media(max-width:600px) { .constraint-item { grid-template-columns: minmax(0,1fr); } }
