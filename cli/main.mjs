@@ -12,6 +12,9 @@ node cli/main.mjs survey-from-template <模板.json> <新问卷.json>
 node cli/main.mjs survey-guide <问卷.json> <计划采集次数> <新说明.txt>
 node cli/main.mjs assess-survey <问卷.json> <每次人数> <目标误差百分点> <采集次数> <新评估.json>
 node cli/main.mjs plan <方案.json> <新报告.json>
+node cli/main.mjs inspect-reports <报表模型.json> <新检查.json>
+node cli/main.mjs plan-person-query <关联方案.json> <新解释.json>
+node cli/main.mjs publish-person-query <账本.sqlite> <关联方案.json> <csv|json> <左表> <csv|json> <右表> <请求编号> <epsilon> <新报告.json>
 node cli/main.mjs export-report <survey|assessment|statistics|plan> <已有报告.json> <新报告.html>
 node cli/main.mjs protect <问卷.json> <新回答.json>
 node cli/main.mjs aggregate <问卷.json> <新报告.json> <回答.json>...
@@ -117,6 +120,13 @@ async function main() {
   } else if (command === 'inspect-reports' && args.length === 2) {
     requireNew([args[1]]);
     writeNew(args[1], callCore({ op: 'inspectDisclosure', model: readJson(args[0]) }));
+  } else if (command === 'plan-person-query' && args.length === 2) {
+    requireNew([args[1]]);
+    writeNew(args[1], callCore({ op: 'planPersonQuery', plan: readJson(args[0]) }));
+  } else if (command === 'publish-person-query' && args.length === 9) {
+    requireNew([args[8]]);
+    const { publishPersonQuery } = await import('../runtime/person-query.mjs');
+    writeNew(args[8], publishPersonQuery(args[0], { plan: readJson(args[1]), leftFormat: args[2], left: readText(args[3], true), rightFormat: args[4], right: readText(args[5], true), requestId: args[6], epsilon: args[7] }));
   } else if (command === 'plan' && args.length === 2) {
     requireNew([args[1]]);
     const input = readJson(args[0]);

@@ -49,6 +49,15 @@ fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
     "inspectDisclosure" => inspect_disclosure(field(request, "model"))
+    "planPersonQuery" => plan_person_query(field(request, "plan"))
+    "mapPersonQuery" =>
+      map_person_query(
+        field(request, "plan"),
+        decode(field(request, "left_format")),
+        decode(field(request, "left")),
+        decode(field(request, "right_format")),
+        decode(field(request, "right")),
+      )
     "assessSurvey" =>
       assess_survey(
         parse_survey(field(request, "survey").stringify()),
@@ -252,6 +261,9 @@ fn prepare_central_request(
   request : Json,
 ) -> (Array[Int32], CentralMechanism, String) raise KitError {
   let op : String = decode(field(request, "op"))
+  if op == "centralSum" {
+    return prepare_sum_request(request)
+  }
   let categories = match op {
     "centralCount" => 1
     "centralHistogram" => decode_int(field(request, "category_count"))

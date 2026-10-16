@@ -38,14 +38,26 @@ pub fn make_central_mechanism(
   epsilon : Double,
   max_contributions : Int32,
 ) -> CentralMechanism raise KitError {
+  if max_contributions < 1 || max_contributions > 32 {
+    raise KitError("max contributions must be between 1 and 32")
+  }
+  calibrate_integer_mechanism(category_count, epsilon, max_contributions)
+}
+
+///|
+fn calibrate_integer_mechanism(
+  category_count : Int32,
+  epsilon : Double,
+  max_contributions : Int32,
+) -> CentralMechanism raise KitError {
   if category_count < 1 || category_count > 256 {
     raise KitError("category count must be between 1 and 256")
   }
   if !finite(epsilon) || epsilon < 0.01 || epsilon > 8.0 {
     raise KitError("central epsilon must be finite and between 0.01 and 8")
   }
-  if max_contributions < 1 || max_contributions > 32 {
-    raise KitError("max contributions must be between 1 and 32")
+  if max_contributions < 1 || max_contributions > 32000 {
+    raise KitError("integer sensitivity must be between 1 and 32000")
   }
   let m = GATE_SIZE.to_double()
   let c = max_contributions.to_double()

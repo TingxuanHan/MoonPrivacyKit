@@ -120,22 +120,22 @@ function statisticsReport(r) {
   object(r, ['schema_version', 'release_id', 'categories', 'report']);
   expect(r.schema_version === 1); expect(typeof r.release_id === 'string' && /^[a-f0-9-]{36}$/.test(r.release_id));
   const s = object(r.report, ['schema_version', 'mechanism', 'query', 'adjacency', 'epsilon', 'epsilon_upper_bound', 'max_contributions', 'category_count', 'output_upper', 'confidence', 'absolute_error_bound', 'counts']);
-  expect(s.schema_version === 1 && s.mechanism === 'central-geometric24-v1' && ['count', 'histogram'].includes(s.query));
+  expect(s.schema_version === 1 && s.mechanism === 'central-geometric24-v1' && ['count', 'histogram', 'bounded_sum'].includes(s.query));
   expect(s.adjacency === 'add_remove_user');
-  number(s.epsilon, .01, 8); number(s.epsilon_upper_bound, 0, s.epsilon); integer(s.max_contributions, 1, 32);
+  number(s.epsilon, .01, 8); number(s.epsilon_upper_bound, 0, s.epsilon); integer(s.max_contributions, 1, s.query === 'bounded_sum' ? 32000 : 32);
   integer(s.category_count, 1, 256); expect(s.output_upper === 100000 && s.confidence === .95); integer(s.absolute_error_bound, 0, s.output_upper);
   list(s.counts, s.category_count, s.category_count).forEach(v => integer(v, 0, s.output_upper));
-  if (s.query === 'count') { expect(s.category_count === 1); list(r.categories, 0, 0); }
+  if (s.query !== 'histogram') { expect(s.category_count === 1); list(r.categories, 0, 0); }
   else { list(r.categories, s.category_count, s.category_count).forEach(c => text(c, 128)); unique(r.categories); }
-  const rows = s.counts.map((v, i) => [s.query === 'count' ? (s.max_contributions === 1 ? '受保护人数' : '受保护记录数') : r.categories[i], n(v), `${n(Math.max(0, v - s.absolute_error_bound))} – ${n(Math.min(s.output_upper, v + s.absolute_error_bound))}`]);
+  const rows = s.counts.map((v, i) => [s.query === 'bounded_sum' ? '受保护整数总量' : s.query === 'count' ? (s.max_contributions === 1 ? '受保护人数' : '受保护记录数') : r.categories[i], n(v), `${n(Math.max(0, v - s.absolute_error_bound))} – ${n(Math.min(s.output_upper, v + s.absolute_error_bound))}`]);
   return {
-    type: '隐私统计报告', title: s.query === 'count' ? '受保护计数' : '受保护类别分布',
+    type: '隐私统计报告', title: s.query === 'bounded_sum' ? '受保护有界整数和' : s.query === 'count' ? '受保护计数' : '受保护类别分布',
     intro: '以下为已保存的中心化差分隐私结果。导出只进行排版，不重新加噪或扣减预算。',
-    facts: [['本次隐私预算 ε', n(s.epsilon)], ['每人贡献上限', `${s.max_contributions} 条`], ['同时置信水平', '95%'], ['绝对误差界', `±${n(s.absolute_error_bound)}`]],
+    facts: [['本次隐私预算 ε', n(s.epsilon)], [s.query === 'bounded_sum' ? '每人总量影响上界' : '每人贡献上限', `${s.max_contributions}${s.query === 'bounded_sum' ? ' 个计量单位' : ' 条'}`], ['同时置信水平', '95%'], ['绝对误差界', `±${n(s.absolute_error_bound)}`]],
     body: section('受保护结果', table(['统计项', '受保护计数', '同时误差范围'], rows)) + scope([
       '采用中心化差分隐私，以增加或删除一个人的全部记录为相邻关系。依赖可信数据持有方和正确、稳定的人员标识，不能保护持有方已经知晓的原始明细。',
       '结果已加入随机噪声，0 不代表无人参与。误差范围针对按人裁剪后的统计量，不覆盖贡献裁剪偏差、样本偏差或错误标识。',
-      '类别与参数须事先确定。每人贡献上限为 1 时估计不同人员数；大于 1 时统计裁剪后的记录数。',
+      s.query === 'bounded_sum' ? '统计非负整数经公开边界裁剪后的总量，每人总量影响上界用于校准噪声。总量截断到 0 至 100000；详细关联和裁剪规则应与原发布方案一同解释。' : '类别与参数须事先确定。每人贡献上限为 1 时估计不同人员数；大于 1 时统计裁剪后的记录数。',
       '本文件不包含原始记录、人员标识、项目路径或账本余额。本次 ε 不是剩余预算；新发布仍需沿用受控账本累计开销，重复查看或导出复用原结果。',
     ]),
     identity: [['结果编号', r.release_id], ['机制版本', s.mechanism]],

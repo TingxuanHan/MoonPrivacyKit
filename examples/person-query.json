@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "join": "same_person_inner",
+  "unit_field": "person",
+  "left_cap": 1,
+  "right_cap": 3,
+  "output_cap": 3,
+  "query": "bounded_sum",
+  "value_field": "hours",
+  "value_upper": 8
+}

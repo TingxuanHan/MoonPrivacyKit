@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { openSync, closeSync, lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomBytes, randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
-import { callCore, centralCount, centralHistogram } from './client.mjs';
+import { callCore, centralCount, centralHistogram, centralSum } from './client.mjs';
 
 const SCALE = 1_000_000;
 const APPLICATION_ID = 0x4d504b31;
@@ -66,11 +66,13 @@ function normalizeRequest(input) {
     if (typeof encoded !== 'string' || encoded.length > 10_000_000) throw new Error();
     value = JSON.parse(encoded);
   } catch { fail('INVALID_REQUEST', 'Cannot read this central release request.'); }
-  if (!value || typeof value !== 'object' || Array.isArray(value) || !['count', 'histogram'].includes(value.query)) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !['count', 'histogram', 'bounded_sum'].includes(value.query)) {
     fail('INVALID_REQUEST', 'Choose a count or histogram query.');
   }
-  const allowed = ['scope', 'requestId', 'query', 'epsilon', 'maxContributions', 'unitIds'];
+  const allowed = ['scope', 'requestId', 'query', 'epsilon', 'maxContributions', 'unitIds', 'context'];
   if (value.query === 'histogram') allowed.push('categories', 'categoryIds');
+  if (value.query === 'bounded_sum') allowed.push('values', 'valueUpper');
+  if (value.context !== undefined && (typeof value.context !== 'string' || !HEX.test(value.context))) fail('INVALID_REQUEST', 'Invalid public plan fingerprint.');
   if (Object.keys(value).some(key => !allowed.includes(key))) fail('INVALID_REQUEST', 'Unsupported release request field.');
   const scope = token(value.scope);
   const requestId = token(value.requestId);
@@ -78,15 +80,16 @@ function normalizeRequest(input) {
   const categories = value.query === 'histogram' ? labels(value.categories) : [];
   const maxContributions = value.maxContributions === undefined ? 1 : value.maxContributions;
   const coreRequest = {
-    op: value.query === 'count' ? 'centralCount' : 'centralHistogram',
+    op: value.query === 'count' ? 'centralCount' : value.query === 'bounded_sum' ? 'centralSum' : 'centralHistogram',
     epsilon: charge / SCALE, max_contributions: maxContributions, unit_ids: value.unitIds,
   };
   if (value.query === 'histogram') Object.assign(coreRequest, { category_count: categories.length, category_ids: value.categoryIds });
+  if (value.query === 'bounded_sum') Object.assign(coreRequest, { values: value.values, value_upper: value.valueUpper });
   // Validate in MoonBit before any database change or random draw. No exact
   // statistic is returned from this validation boundary.
   try { callCore({ op: 'validateCentral', request: coreRequest }); }
   catch { fail('INVALID_REQUEST', 'Invalid central data, contribution limit or release budget.'); }
-  return { scope, requestId, charge, categories, coreRequest };
+  return { scope, requestId, charge, categories, coreRequest, context: value.context };
 }
 
 function configure(db, create = false) {
@@ -236,6 +239,7 @@ export function publishRelease(path, input) {
       const fingerprint = mac(meta, 'request-v1', JSON.stringify({
         mechanism: 'central-geometric24-v1', scope: request.scope,
         categories: request.categories, request: request.coreRequest,
+        context: request.context,
       }));
       const previous = db.prepare('SELECT * FROM releases WHERE request_id = ?').get(request.requestId);
       if (previous) {
@@ -250,7 +254,7 @@ export function publishRelease(path, input) {
       const options = { epsilon: query.epsilon, maxContributions: query.max_contributions };
       let report;
       try {
-        report = query.op === 'centralCount' ? centralCount(query.unit_ids, options) :
+        report = query.op === 'centralCount' ? centralCount(query.unit_ids, options) : query.op === 'centralSum' ? centralSum(query.unit_ids, query.values, { ...options, valueUpper: query.value_upper }) :
           centralHistogram(query.unit_ids, query.category_ids, { ...options, categoryCount: query.category_count });
       } catch { fail('RELEASE_FAILED', 'Protected statistics could not be generated. Retry the same request.'); }
       const result = { schema_version: 1, release_id: randomUUID(), categories: request.categories, report };

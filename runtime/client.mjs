@@ -109,3 +109,8 @@ export function centralHistogram(unitIds, categoryIds, { categoryCount, epsilon,
     category_count: categoryCount, unit_ids: unitIds, category_ids: categoryIds,
   });
 }
+
+// Nonnegative integer sums with declared clipping and add/remove-person bounds.
+export function centralSum(unitIds, values, { epsilon, maxContributions = 1, valueUpper } = {}) {
+  return releaseCentral({ op: 'centralSum', unit_ids: unitIds, values, epsilon, max_contributions: maxContributions, value_upper: valueUpper });
+}

@@ -44,6 +44,8 @@ pub fn make_central_mechanism(Int, Double, Int) -> CentralMechanism raise KitErr
 
 pub fn make_mechanism(Int, Double) -> Mechanism raise KitError
 
+pub fn map_person_query(Json, String, String, String, String) -> Json raise KitError
+
 pub fn map_table(String, String, TableMapping) -> MappedTable raise KitError
 
 pub fn parse_csv(String) -> CsvTable raise KitError
@@ -57,6 +59,8 @@ pub fn parse_statistics_template(String) -> StatisticsTemplate raise KitError
 pub fn parse_survey(String) -> Survey raise KitError
 
 pub fn parse_survey_template(String) -> SurveyTemplate raise KitError
+
+pub fn plan_person_query(Json) -> Json raise KitError
 
 pub fn plan_survey(Array[Mechanism], Int, collections? : Int, alpha? : Double) -> PrivacyPlan raise KitError
 
