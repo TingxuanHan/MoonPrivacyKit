@@ -114,6 +114,9 @@ async function main() {
     writeNew(args[4], await assessSurvey(parseSurvey(readText(args[0], true)), {
       samples: Number(args[1]), targetRadius: Number(args[2]) / 100, collections: Number(args[3]),
     }));
+  } else if (command === 'inspect-reports' && args.length === 2) {
+    requireNew([args[1]]);
+    writeNew(args[1], callCore({ op: 'inspectDisclosure', model: readJson(args[0]) }));
   } else if (command === 'plan' && args.length === 2) {
     requireNew([args[1]]);
     const input = readJson(args[0]);

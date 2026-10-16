@@ -48,6 +48,7 @@ fn[T : ToJson] nullable_json(value : T?) -> Json {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "inspectDisclosure" => inspect_disclosure(field(request, "model"))
     "assessSurvey" =>
       assess_survey(
         parse_survey(field(request, "survey").stringify()),

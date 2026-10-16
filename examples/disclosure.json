@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "kind": "exact-counts",
+  "cohort": "synthetic-team-october",
+  "node_limit": 20000,
+  "cells": [
+    {"id": "A", "lower": 0, "upper": 52, "protected": false, "min_width": 1},
+    {"id": "B", "lower": 0, "upper": 52, "protected": false, "min_width": 1},
+    {"id": "C", "lower": 0, "upper": 52, "protected": true, "min_width": 5}
+  ],
+  "equations": [
+    {"id": "公开总人数", "cells": ["A", "B", "C"], "total": 52, "published": true},
+    {"id": "公开类别A", "cells": ["A"], "total": 35, "published": true},
+    {"id": "待发布类别B", "cells": ["B"], "total": 16, "published": false}
+  ]
+}

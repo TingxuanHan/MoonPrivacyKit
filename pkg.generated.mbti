@@ -34,6 +34,8 @@ pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
 
 pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
 
+pub fn inspect_disclosure(Json) -> Json raise KitError
+
 pub fn inspect_fields(String, String) -> Array[String] raise KitError
 
 pub fn make_budget_state(Int, Int) -> BudgetState raise KitError
