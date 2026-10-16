@@ -4,6 +4,8 @@ cd /d "%~dp0"
 if defined MOON_HOME set "PATH=%MOON_HOME%\bin;%PATH%"
 where moon >nul 2>nul
 if errorlevel 1 if exist "%USERPROFILE%\.moon\bin\moon.exe" set "PATH=%USERPROFILE%\.moon\bin;%PATH%"
+if not exist node_modules\esbuild call npm ci --ignore-scripts
+if errorlevel 1 goto failed
 node scripts\build.mjs
 if errorlevel 1 goto failed
 node scripts\launch.mjs

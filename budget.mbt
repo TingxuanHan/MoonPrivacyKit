@@ -34,6 +34,7 @@ pub fn charge_budget(
   if charge_units > state.remaining_units {
     raise KitError("privacy budget exhausted")
   }
+  upstream_budget_admission(state.remaining_units, charge_units)
   make_budget_state(state.total_units, state.spent_units + charge_units)
 }
 

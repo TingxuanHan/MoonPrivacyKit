@@ -13,3 +13,8 @@ keywords = [ "privacy", "survey", "randomized-response", "redaction" ]
 preferred_target = "wasm"
 
 description = "Privacy-preserving surveys, local redaction, and privacy-utility assessment."
+
+import {
+  "ppyq882/moon-privacy-budget@0.1.1",
+  "123123213weqw/moon_scrub@0.5.2",
+}

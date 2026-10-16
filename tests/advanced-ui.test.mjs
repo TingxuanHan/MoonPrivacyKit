@@ -106,10 +106,38 @@ test('browser encrypted shares and signed joint results interoperate with indepe
   await click('核验并合并结果'); await page.locator('#joint-tool .notice.error').waitFor(); assert.equal(await page.locator('#joint-result').isVisible(), false);
 });
 
+test('private candidate comparison uses existing templates and exports a reviewed copy', async () => {
+  await openReview('处理方案比较');
+  const records=[22,23,42,43].map((age,i)=>({id:`private-${i}`,age,department:i<2?'A':'B'}));
+  const candidate=(name,rule)=>({schemaVersion:2,kind:'moonprivacykit/redaction-template',name,settings:{fields:[{name:'id',action:'remove'},{name:'age',...rule},{name:'department',action:'keep'}],spreadsheetSafe:false}});
+  await page.getByLabel('待比较的真实数据').setInputFiles(file('data.json',records));
+  await page.getByLabel('候选字段模板（可多选，在“文件脱敏”中保存）').setInputFiles([file('fine.json',candidate('保留年龄',{action:'keep'})),file('coarse.json',candidate('年龄分段',{action:'age',boundaries:[30,60]}))]);
+  await page.getByLabel('可能联合识别的字段（逗号分隔）').fill('age,department');
+  await page.getByLabel('必须原样保留的字段（可留空）').fill('department');
+  await click('比较候选方案'); await page.getByRole('heading',{name:'候选方案比较结果'}).waitFor();
+  const report=JSON.parse(await save('下载内部方案比较')); assert.deepEqual(report.frontier,['年龄分段']);
+  const copy=JSON.parse(await save('导出「年龄分段」处理副本')); assert.equal(copy[0].age,'0-29'); assert.equal(Object.hasOwn(copy[0],'id'),false);
+  await page.screenshot({path:join(artifacts,'comparison-desktop.png'),fullPage:true});
+  await page.getByLabel('期望最小分组大小 k').fill('3'); assert.equal(await page.locator('#comparison-result').isVisible(),false);
+});
+
+test('two-version checks explain the linkability assumption and reject changed cohorts', async () => {
+  await openReview('两版数据联查');
+  const left=[0,0,1,1].map((x,i)=>({id:`private-${i}`,x})),right=[0,1,0,1].map((y,i)=>({id:`private-${i}`,y}));
+  await page.getByLabel('第一版数据',{exact:true}).setInputFiles(file('left.json',left)); await page.getByLabel('第二版数据',{exact:true}).setInputFiles(file('right.json',right));
+  await click('检查两版联合风险'); await page.locator('#versions-tool .notice.error').waitFor();
+  await page.getByLabel('确认两版是同一群体、一人一行，且接收方能正确关联同一人').check();
+  await click('检查两版联合风险'); await page.getByRole('heading',{name:'两版联合检查结果'}).waitFor();
+  assert.equal(JSON.parse(await save('下载内部联查报告')).newly_below_k_rows,4);
+  assert.ok(!(await page.locator('#versions-result').innerText()).includes('private-0'));
+  await page.getByLabel('第二版数据',{exact:true}).setInputFiles(file('changed.json',right.slice(1))); await click('检查两版联合风险');
+  await page.locator('#versions-tool .notice.error').waitFor(); assert.equal(await page.locator('#versions-result').isVisible(),false);
+});
+
 test('new tools fit narrow screens, expose keyboard focus and make no external requests', async () => {
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
-    for (const [view, sub] of [['发布检查', '报表防反推'], ['发布检查', '按人保护的多表统计'], ['协作工具', '匿名参与凭证'], ['协作工具', '联合统计']]) {
+    for (const [view, sub] of [['发布检查', '报表防反推'], ['发布检查', '按人保护的多表统计'], ['发布检查', '处理方案比较'], ['发布检查', '两版数据联查'], ['协作工具', '匿名参与凭证'], ['协作工具', '联合统计']]) {
       await click(view); await click(sub);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${sub} overflow at ${width}`);
     }

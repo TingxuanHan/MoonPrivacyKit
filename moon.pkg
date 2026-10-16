@@ -1,4 +1,7 @@
 import {
   "moonbitlang/core/math",
   "moonbitlang/core/json",
+  "123123213weqw/moon_scrub" @scrub,
+  "ppyq882/moon-privacy-budget/src/core" @upstream_core,
+  "ppyq882/moon-privacy-budget/src/ledger" @upstream_ledger,
 }

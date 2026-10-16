@@ -84,6 +84,26 @@ fn execute_request(request : Json) -> Json raise KitError {
         field(request, "response"),
       )
     "planPersonQuery" => plan_person_query(field(request, "plan"))
+    "scanSensitiveFields" =>
+      scan_sensitive_fields(
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      )
+    "scrubText" => scrub_text(decode(field(request, "input")))
+    "comparePrivacyPlans" =>
+      compare_privacy_plans(
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+        field(request, "config"),
+      )
+    "comparePrivateVersions" =>
+      compare_private_versions(
+        decode(field(request, "left_format")),
+        decode(field(request, "left")),
+        decode(field(request, "right_format")),
+        decode(field(request, "right")),
+        field(request, "config"),
+      )
     "mapPersonQuery" =>
       map_person_query(
         field(request, "plan"),

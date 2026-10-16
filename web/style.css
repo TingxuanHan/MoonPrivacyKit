@@ -59,7 +59,7 @@ main { padding: 32px 36px 20px; width: 100%; min-width: 0; outline: none; backgr
 .page-heading { display: flex; justify-content: space-between; margin-bottom: 26px; }
 .page-heading p:not(.eyebrow) { color: var(--muted); margin-top: 10px; }
 .eyebrow { font-size: 11px; letter-spacing: 1.3px; color: var(--green); margin-bottom: 8px; margin-top: 0; font-weight: 600; }
-.subnav { display: flex; gap: 4px; padding: 4px; background: #e5eee8; border: 1px solid #d6e3da; border-radius: 10px; margin-bottom: 24px; width: fit-content; max-width: 100%; }
+.subnav { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #e5eee8; border: 1px solid #d6e3da; border-radius: 10px; margin-bottom: 24px; width: fit-content; max-width: 100%; }
 .subnav button { background: transparent; color: #4f695c; padding: 8px 19px; min-height: 40px; }
 .subnav button[aria-pressed=true] { background: var(--paper); color: var(--green); font-weight: 600; box-shadow: 0 1px 4px #183a3412; border-color: #d3e0d7; }
 .panel { padding: 25px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 20px; min-width: 0; box-shadow: 0 2px 12px #183a3405; }

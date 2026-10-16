@@ -30,6 +30,10 @@ pub fn check_statistics_template(StatisticsTemplate, String, String) -> Template
 
 pub fn combine_aggregate_shares(Array[Int], Array[Int], Int, Int) -> Array[Int] raise KitError
 
+pub fn compare_privacy_plans(String, String, Json) -> Json raise KitError
+
+pub fn compare_private_versions(String, String, String, String, Json) -> Json raise KitError
+
 pub fn dispatch(String) -> String
 
 pub fn dispatch_central(String, (Int) -> Int) -> String
@@ -79,6 +83,10 @@ pub fn redact_csv(String, FieldPolicy, spreadsheet_safe? : Bool) -> RedactionRes
 pub fn redact_json(String, FieldPolicy) -> RedactionResult raise KitError
 
 pub fn required_samples(Mechanism, Double, alpha? : Double) -> Int? raise KitError
+
+pub fn scan_sensitive_fields(String, String) -> Json raise KitError
+
+pub fn scrub_text(String) -> Json raise KitError
 
 pub fn split_aggregate(Array[Int], Array[Int], Int) -> Json raise KitError
 

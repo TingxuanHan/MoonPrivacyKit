@@ -13,6 +13,10 @@ node cli/main.mjs survey-guide <问卷.json> <计划采集次数> <新说明.txt
 node cli/main.mjs assess-survey <问卷.json> <每次人数> <目标误差百分点> <采集次数> <新评估.json>
 node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs inspect-reports <报表模型.json> <新检查.json>
+node cli/main.mjs compare-plans <csv|json> <原表> <候选配置.json> <内部比较.json>
+node cli/main.mjs compare-versions <csv|json> <第一版> <csv|json> <第二版> <对应配置.json> <内部检查.json>
+node cli/main.mjs scan-fields <csv|json> <原表> <内部扫描.json>
+node cli/main.mjs scrub-text <原文本> <处理结果.json>
 node cli/main.mjs plan-person-query <关联方案.json> <新解释.json>
 node cli/main.mjs publish-person-query <账本.sqlite> <关联方案.json> <csv|json> <左表> <csv|json> <右表> <请求编号> <epsilon> <新报告.json>
 node cli/main.mjs export-report <survey|assessment|statistics|plan> <已有报告.json> <新报告.html>
@@ -117,6 +121,18 @@ async function main() {
     writeNew(args[4], await assessSurvey(parseSurvey(readText(args[0], true)), {
       samples: Number(args[1]), targetRadius: Number(args[2]) / 100, collections: Number(args[3]),
     }));
+  } else if (command === 'compare-plans' && args.length === 4) {
+    requireNew([args[3]]);
+    writeNew(args[3], callCore({op:'comparePrivacyPlans',format:args[0],input:readText(args[1],true),config:readJson(args[2])}));
+  } else if (command === 'compare-versions' && args.length === 6) {
+    requireNew([args[5]]);
+    writeNew(args[5], callCore({op:'comparePrivateVersions',left_format:args[0],left:readText(args[1],true),right_format:args[2],right:readText(args[3],true),config:readJson(args[4])}));
+  } else if (command === 'scan-fields' && args.length === 3) {
+    requireNew([args[2]]);
+    writeNew(args[2], callCore({op:'scanSensitiveFields',format:args[0],input:readText(args[1],true)}));
+  } else if (command === 'scrub-text' && args.length === 2) {
+    requireNew([args[1]]);
+    writeNew(args[1], callCore({op:'scrubText',input:readText(args[0],true)}));
   } else if (command === 'inspect-reports' && args.length === 2) {
     requireNew([args[1]]);
     writeNew(args[1], callCore({ op: 'inspectDisclosure', model: readJson(args[0]) }));

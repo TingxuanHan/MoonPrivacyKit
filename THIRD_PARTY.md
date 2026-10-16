@@ -4,6 +4,8 @@
 
 | 组件 | 用途 | 版本与许可 |
 | --- | --- | --- |
+| ppyq882/moon-privacy-budget | 纯 ε 预算预留、回滚、提交与核对的无状态适配；持久化权威仍是现有 SQLite 账本 | Mooncakes 0.1.1，Apache-2.0，https://github.com/ppyq882/moon-privacy-budget |
+| 123123213weqw/moon_scrub | 顶层字符串内容扫描和文本脱敏，检测规则归属上游 | Mooncakes 0.5.2，Apache-2.0，https://github.com/yyqdbngt/moon-scrub |
 | @cloudflare/blindrsa-ts | 匿名参与凭证的 RSA 盲签名 | 0.4.6，Apache-2.0，https://github.com/cloudflare/blindrsa-ts |
 | SJCL | 上述组件内部的大整数与密码辅助代码 | npm 1.0.9 及其随包实现，选择 BSD-2-Clause 许可分支，https://github.com/bitwiseshiftleft/sjcl |
 | esbuild | 本地浏览器模块打包，仅构建时使用 | 0.28.2，MIT，https://github.com/evanw/esbuild |

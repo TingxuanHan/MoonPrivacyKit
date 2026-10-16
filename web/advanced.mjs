@@ -1,6 +1,7 @@
 import { initDisclosure } from './disclosure.mjs';
 import { initPersonQuery } from './person-query.mjs';
 import { initCollaboration } from './collaboration.mjs';
+import { initPlanningTools } from './planning-tools.mjs';
 
 export function initAdvanced({ callCore, element: e, download }) {
   const text = (tag, value, attrs = {}) => e(tag, { ...attrs, text: value });
@@ -56,8 +57,9 @@ export function initAdvanced({ callCore, element: e, download }) {
     return sections.map(s => s.section);
   }
   const ui = { e, text, button, field, file, read, panel, row, note, controller, callCore, download };
-  const [disclosure, person] = tabs(document.querySelector('#view-review'), '发布检查', '检查多张报表是否能拼出隐藏人数，或先约束多表连接再发布统计。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计']]);
+  const [disclosure, person, comparison, versions] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查']]);
   initDisclosure(disclosure, ui); initPersonQuery(person, ui);
+  initPlanningTools(comparison, versions, ui);
   const [credential, joint] = tabs(document.querySelector('#view-collaboration'), '协作工具', '按角色保管文件，在资格核验、收卷与联合分析之间减少身份和数据暴露。', [['credential-tool', '匿名参与凭证'], ['joint-tool', '联合统计']]);
   initCollaboration(credential, joint, ui);
 }
