@@ -2,6 +2,11 @@
 
 ## 方法参考
 
+- [RFC 9474](https://www.rfc-editor.org/rfc/rfc9474.html)、[Cloudflare blindrsa-ts](https://github.com/cloudflare/blindrsa-ts)：匿名参与凭证的标准与实际密码组件；[RFC 9576](https://www.rfc-editor.org/rfc/rfc9576.html) 为角色分离与关联风险的背景。
+- [sdcTable](https://sdctools.github.io/sdcTable/articles/sdcTable.html)：统计披露控制问题参考，GPL 源码没有复制或依赖。
+- [Tumult 私有连接](https://docs.tmlt.dev/analytics/v0.21/reference/api/tmlt.analytics.QueryBuilder.join_private.html)：按人所有权与连接贡献约束的参考，未复制实现。
+- [Prio](https://crypto.stanford.edu/prio/)：多服务秘密分享聚合背景；本原型没有实现其恶意输入证明，不以 Prio 安全性为自身背书。
+
 - [OpenDP 随机响应文档](https://docs.opendp.org/en/stable/api/user-guide/measurements/randomized-response.html)：有限类别随机响应及比例估计的数学参考。
 - [OpenDP 加性噪声机制](https://docs.opendp.org/en/stable/api/user-guide/measurements/additive-noise-mechanisms.html)：整数几何噪声、向量查询及 L1 敏感度的参考；本项目的保守有理数校准与采样说明见[中心化隐私统计](CENTRAL_PRIVACY.md)。
 - [OpenDP](https://github.com/opendp/opendp)：MIT 许可的差分隐私库。本项目不是 OpenDP 的整库移植，当前不复制其实现代码。
@@ -24,9 +29,9 @@
 
 ## 相邻 MoonBit 项目
 
-- [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget)，Apache-2.0：已有随机响应等差分隐私机制、预算策略、账本预留／提交／回滚、查询计划、批处理和审计导出。本项目拟接入预算接口，在其上连接实际任务；当前原型尚未引入此依赖。
-- [moon_scrub](https://github.com/yyqdbngt/moon-scrub)，Apache-2.0，模块名 `123123213weqw/moon_scrub`：已有离线敏感信息扫描、脱敏、结构化字段、JSON／日志及流式管道。本项目拟复用检测与脱敏接口；当前没有自动检测能力，也尚未引入此依赖。
+- [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget)，Apache-2.0：已有随机响应等差分隐私机制、预算策略、账本预留／提交／回滚、查询计划、批处理和审计导出。已引入 0.1.1 的 core/ledger 兼容子集，实际执行预算预留与核对；详见[上游接入](UPSTREAM_INTEGRATION.md)。
+- [moon_scrub](https://github.com/yyqdbngt/moon-scrub)，Apache-2.0，模块名 `123123213weqw/moon_scrub`：已有离线敏感信息扫描、脱敏、结构化字段、JSON／日志及流式管道。已实际引入可安装的 0.5.2 并提供内容扫描与文本脱敏；不冒充已接入源码快照中的 0.9.0。
 - [MoonSentinel](https://github.com/STW135-2026/moonsentinel)，Apache-2.0：已有单批次 k-匿名、l-diversity、用途／接收方核验和发布回执。作为功能对照，不将单次风险门禁另作本项目贡献。
 - [MoonRedactKit](https://github.com/xvkong834/MoonRedactKit)，Apache-2.0：敏感信息识别与脱敏策略。
 
-当前原型独立实现，基础机制、预算与脱敏能力不作为独占创新点。新增工作重点是有限处理方案的风险／信息损失比较和指定条件下的跨版本联合检查，二者均待开发。与上游的版本、许可、实际依赖状态及扩展分工见[生态定位](ECOSYSTEM_POSITIONING.md)，具体新增范围见[工具设计](PRIVACY_PLANNING_TOOLS.md)。相关基础能力已有生态实现，不把整个隐私领域描述为生态空白；引入代码或依赖时同步维护许可与来源。
+当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算和脱敏作为独占创新。六项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。

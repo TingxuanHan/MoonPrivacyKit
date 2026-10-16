@@ -2,7 +2,13 @@
 
 ## 工作台
 
-运行 `npm run build` 后运行 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit `moon 0.1.20261012`／`moonc v0.10.15` 或更新版本，以及 Node.js 22.13.0+；先用 `moon version --all` 确认版本。Windows 的 `start.cmd` 可以完成构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。旧版本出现 `Int32` 未定义时须更新工具链，已有问卷、字段模板和统计账本无需迁移。
+先运行 `npm ci --ignore-scripts`，再运行 `npm run build` 和 `npm start`，打开 http://127.0.0.1:4173。需要 MoonBit `moon 0.1.20261012`／`moonc v0.10.15` 或更新版本，以及 Node.js 24+；先用 `moon version --all` 确认版本。Windows 的 `start.cmd` 可以完成依赖安装、构建、启动及打开页面；如 MoonBit 安装在自定义目录，可先设置 `MOON_HOME`。已有问卷、字段模板和统计账本无需迁移。
+
+### 新增任务入口
+
+“发布检查”包含[报表防反推](REPORT_DISCLOSURE.md)、[按人多表统计](PERSON_QUERIES.md)、[方案比较与两版联查](PRIVACY_PLANNING_TOOLS.md)。多表统计先选共用项目；其他检查只在本地计算，报告供内部使用。候选字段模板可在“文件脱敏”中保存后导入比较器。
+
+“协作工具”提供[匿名凭证](ANONYMOUS_CREDENTIALS.md)的参与者文件流程和[联合统计](JOINT_STATISTICS.md)的加密文件/签名结果流程。组织者、收卷方、两个聚合方各自用命令行初始化独立的角色文件；`node cli/privacy.mjs --help` 显示完整命令。参与提交包由收卷方执行 `redeem-submission <收卷库> <提交包> <回执>` 接收。浏览器不会代替组织者核验真实资格，也不会直接把秘密发送到远程服务。
 
 ### 隐私问卷
 
