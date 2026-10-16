@@ -49,6 +49,14 @@ fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
     "inspectDisclosure" => inspect_disclosure(field(request, "model"))
+    "validateCredentialContext" =>
+      validate_credential_context(field(request, "context"))
+    "validateCredentialResponse" =>
+      validate_credential_response(
+        parse_survey(field(request, "survey").stringify()),
+        decode(field(request, "fingerprint")),
+        field(request, "response"),
+      )
     "planPersonQuery" => plan_person_query(field(request, "plan"))
     "mapPersonQuery" =>
       map_person_query(

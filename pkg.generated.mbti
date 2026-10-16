@@ -80,6 +80,10 @@ pub fn survey_budget(Survey, Int) -> SurveyBudget raise KitError
 
 pub fn survey_from_template(SurveyTemplate, String) -> Survey raise KitError
 
+pub fn validate_credential_context(Json) -> Json raise KitError
+
+pub fn validate_credential_response(Survey, String, Json) -> Json raise KitError
+
 pub fn validate_survey(Survey) -> Array[Mechanism] raise KitError
 
 // Errors

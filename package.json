@@ -5,16 +5,20 @@
   "type": "module",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs tests/templates.test.mjs tests/redaction-templates.test.mjs tests/generalization.test.mjs tests/survey-templates.test.mjs tests/survey-assessment.test.mjs tests/report-export.test.mjs tests/disclosure.test.mjs tests/person-query.test.mjs",
+    "test": "node --test tests/runtime.test.mjs tests/cli.test.mjs tests/evaluation.test.mjs tests/central.test.mjs tests/ledger.test.mjs tests/table.test.mjs tests/workbench.test.mjs tests/templates.test.mjs tests/redaction-templates.test.mjs tests/generalization.test.mjs tests/survey-templates.test.mjs tests/survey-assessment.test.mjs tests/report-export.test.mjs tests/disclosure.test.mjs tests/person-query.test.mjs tests/credentials.test.mjs",
     "start": "node scripts/serve.mjs",
     "test:ui": "node --test tests/ui.test.mjs tests/report-ui.test.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "1.62.1"
+  },
+  "dependencies": {
+    "@cloudflare/blindrsa-ts": "0.4.6"
   }
 }

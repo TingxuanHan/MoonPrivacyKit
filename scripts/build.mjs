@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { build } from 'esbuild';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const result = spawnSync('moon', ['build', '--target', 'js', '--release'], { cwd: root, stdio: 'inherit' });
@@ -14,4 +15,5 @@ const source = ['_build/js/release/build/bridge/bridge.js', 'target/js/release/b
 if (!source) throw new Error('MoonBit JavaScript output was not found.');
 mkdirSync(resolve(root, 'dist'), { recursive: true });
 copyFileSync(source, resolve(root, 'dist/core.js'));
+await build({ entryPoints: [resolve(root, 'runtime/credential-client.mjs')], outfile: resolve(root, 'dist/credential-client.js'), bundle: true, format: 'esm', platform: 'browser', target: 'es2022', legalComments: 'linked', external: ['../dist/core.js'] });
 console.log('Built dist/core.js from MoonBit.');
