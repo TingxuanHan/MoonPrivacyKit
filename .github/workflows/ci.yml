@@ -29,6 +29,7 @@ jobs:
       - name: Check MoonBit and run cross-target tests
         run: |
           moon version --all
+          moon update
           moon check --deny-warn --target wasm
           moon check --deny-warn --target js
           moon test --target wasm

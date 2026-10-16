@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const commands = [
+  ['moon', ['update']],
   ['moon', ['check', '--deny-warn', '--target', 'wasm']],
   ['moon', ['check', '--deny-warn', '--target', 'js']],
   ['moon', ['test', '--target', 'wasm']],

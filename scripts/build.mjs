@@ -5,6 +5,10 @@ import { resolve } from 'node:path';
 import { build } from 'esbuild';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+if (['ppyq882/moon-privacy-budget', '123123213weqw/moon_scrub'].some(module => !existsSync(resolve(root, '.mooncakes', module, 'moon.mod')))) {
+  const update = spawnSync('moon', ['update'], { cwd: root, stdio: 'inherit' });
+  if (update.error || update.status !== 0) { console.error('Dependency registry initialization failed. Check network access and run moon update.'); process.exit(1); }
+}
 const result = spawnSync('moon', ['build', '--target', 'js', '--release'], { cwd: root, stdio: 'inherit' });
 if (result.error || result.status !== 0) {
   console.error('Build failed. Install the MoonBit toolchain and add moon to PATH.');
