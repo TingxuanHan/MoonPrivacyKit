@@ -1,6 +1,6 @@
 # 既有项目关系与差异化贡献
 
-核对日期：2026-10-16。本文与[申报书](APPLICATION.md)一起说明实际复用、已完成扩展及边界。比较基于已核对的公开源码和接口，不是对其他项目功能的穷尽审计，也不构成全生态唯一性或算法首创声明。
+核对日期：2026-10-16；MPC 专项补充核对：2026-10-17。本文与[申报书](APPLICATION.md)一起说明实际复用、已完成扩展及边界。比较基于已核对的公开源码和接口，不是对其他项目功能的穷尽审计，也不构成全生态唯一性或算法首创声明。
 
 ## 实际复用关系
 
@@ -31,6 +31,12 @@
 流程检查另与 [workflows.mbt](https://github.com/f4ah6o/workflows.mbt/tree/dac416614f892e91a48b94b35444bdefe5ee5a36) 对照：该项目是持久工作流兼容运行时，本模块是有限的隐私条件检查器，不调度或执行任务，也未复用其代码。其他语言的 [OpenDP Chaining](https://docs.opendp.org/en/stable/api/user-guide/combinators/chaining.html) 已有类型/度量匹配与机制组合；本模块针对本工具箱的跨工具声明及非 DP 输出边界，不能等同于 OpenDP 的证明体系。详细重叠与引用版本见[流程检查说明](PRIVACY_WORKFLOWS.md)。
 
 补充边界：[moonveil](https://github.com/wangjiale6036-dotcom/moonveil) 已提供稳定 HMAC 假名、作用域与可复现处理；[moonlogfmt-lens](https://github.com/sqhyyy/moonlogfmt-lens) 已有日志合同、脱敏与漂移分析；[moonredact](https://github.com/chenliyi-cly/moonredact) 已有检测、策略比较和残留扫描。故本项目不把“稳定标识”“策略比较”这一宽泛词语或“重试可复现”本身作为独占差异。具体差别是表格候选的分组/信息损失指标、可靠跨版本对应下的组合分组变化，以及上述完整发布与协议约束。
+
+## MPC 已有实现与本项目定位
+
+MoonBit 生态已有 MPC 算法实现。[Juwan-Hwang/moon-certified 的 crypto/mpc](https://github.com/Juwan-Hwang/moon-certified/tree/94dd850ce24db5610e720035d5bdb1ecb2923e43/crypto/mpc)（Apache-2.0）提供 Shamir 秘密分享、重建、份额加法与 BGW88 乘法；Mooncakes 可检索到该模块的 0.1.1 版本。该事实通过 `moon search mpc --json`、`moon search 'secret sharing' --json` 及公开源码、测试交叉核对；不能根据 GitHub 关键词搜索未命中就宣称生态空白。
+
+所查 MPC 模块以份额数组为函数输入，未在该模块提供独立节点的消息收发与任务存储。MoonPrivacyKit 的当前差异是两聚合节点的独立服务、分角色密钥与存储、加密份额、参与方认证、固定任务名单和可核验结果。当前只支持加法向量聚合，没有上述 BGW 乘法能力；不声称协议更强、首次实现 MPC 或提供通用 MPC 框架。未依赖或复制 moon-certified 代码。具体安全假设与功能边界见[联合统计](JOINT_STATISTICS.md)。
 
 ## 不夸大的范围
 

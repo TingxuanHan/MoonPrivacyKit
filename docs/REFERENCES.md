@@ -25,13 +25,14 @@
 - [MP-SPDZ](https://github.com/data61/MP-SPDZ)：用于比较不同安全模型下的 MPC 协议与计算成本。主体采用 BSD-3-Clause，附带组件另有条款，详见其 [License.txt](https://github.com/data61/MP-SPDZ/blob/master/License.txt)。项目明确说明其实现并不等于已通过生产级安全审查，本项目拟先用于原型与基准评估。
 - [Microsoft SEAL](https://github.com/microsoft/SEAL)：MIT 许可的同态加密库，作为有界密文算术的候选后端。密钥管理、结果开放方式及密文和计算开销仍需由应用设计与验证。
 
-原方法选型日期：2026-10-05；相邻项目与新增工具参考于 2026-10-16 补充核对。技术路线是结合项目场景作出的设计选择，不代表上述机构对本项目的背书或安全认证。
+原方法选型日期：2026-10-05；相邻项目与新增工具参考于 2026-10-16 补充核对，MPC 对照于 2026-10-17 更新。技术路线是结合项目场景作出的设计选择，不代表上述机构对本项目的背书或安全认证。
 
 ## 相邻 MoonBit 项目
 
+- [moon-certified/crypto/mpc](https://github.com/Juwan-Hwang/moon-certified/tree/94dd850ce24db5610e720035d5bdb1ecb2923e43/crypto/mpc)，Apache-2.0：已有 Shamir 秘密分享、重建、份额加法和 BGW88 乘法。Mooncakes 检索确认模块 0.1.1，源码与测试用于比较；未引入依赖或复制代码。本项目当前仅支持加法聚合，区别在独立角色服务及完整任务协议，不能声称首次在 MoonBit 中实现 MPC。
 - [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget)，Apache-2.0：已有随机响应等差分隐私机制、预算策略、账本预留／提交／回滚、查询计划、批处理和审计导出。已引入 0.1.1 的 core/ledger 兼容子集，实际执行预算预留与核对；详见[上游接入](UPSTREAM_INTEGRATION.md)。
 - [moon_scrub](https://github.com/yyqdbngt/moon-scrub)，Apache-2.0，模块名 `123123213weqw/moon_scrub`：已有离线敏感信息扫描、脱敏、结构化字段、JSON／日志及流式管道。已实际引入可安装的 0.5.2 并提供内容扫描与文本脱敏；不冒充已接入源码快照中的 0.9.0。
 - [MoonSentinel](https://github.com/STW135-2026/moonsentinel)，Apache-2.0：已有单批次 k-匿名、l-diversity、用途／接收方核验和发布回执。作为功能对照，不将单次风险门禁另作本项目贡献。
 - [MoonRedactKit](https://github.com/xvkong834/MoonRedactKit)，Apache-2.0：敏感信息识别与脱敏策略。
 
-当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算和脱敏作为独占创新。六项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。
+当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算、脱敏或 MPC 原语作为独占创新。七项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。
