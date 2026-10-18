@@ -12,6 +12,8 @@ export function syntheticResult(result, { element: e, download }) {
     e('thead', {}, [e('tr', {}, table.columns.map(name => text('th', name, { scope: 'col' })))]),
     e('tbody', {}, table.rows.slice(0, 8).map(row => e('tr', {}, row.map(value => text('td', value))))),
   ]);
+  const audit = text('button', '评估这份数据的泄露风险', { type: 'button', class: 'secondary' });
+  audit.addEventListener('click', () => document.dispatchEvent(new CustomEvent('moonprivacykit:audit-synthetic', { detail: result })));
   return e('div', { class: 'synthetic-saved' }, [
     text('h2', '合成数据已保存'),
     text('p', `${table.rows.length} 行 · ${table.columns.length} 个字段 · 本次预算 ε ${result.report.epsilon}`, { class: 'synthetic-summary' }),
@@ -20,6 +22,7 @@ export function syntheticResult(result, { element: e, download }) {
     e('div', { class: 'button-row' }, [
       save('下载合成 CSV', 'csv', table.csv, 'text/csv;charset=utf-8'),
       save('下载完整生成记录', 'json', JSON.stringify(result, null, 2), 'application/json'),
+      audit,
     ]),
     text('p', `下载复用这份结果，不重新抽样或消耗预算。CSV 已对 ${table.csv_escaped_cells} 个公式样式单元格添加安全前缀；JSON 保留原公开标签。`, { class: 'footnote' }),
     e('details', {}, [text('summary', '查看保护方式和字段关系'),

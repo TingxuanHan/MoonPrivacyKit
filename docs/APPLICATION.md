@@ -34,7 +34,7 @@ MoonPrivacyKit 建设持续扩展、统一易用的隐私工具平台，面向�
 
 本月围绕三个目标交付，均已有可运行原型：
 
-- 发布决策工具：有限候选方案比较、两版数据联合检查、精确报表约束求解与修复复验；给出明确适用条件，超出计算上限时不作无风险结论。
+- 发布决策工具：候选方案比较、两版联查、精确报表求解与修复；新增合成数据成员/属性推断，以独立测试、误报率和基线检查泄露，失败不判安全。
 
 - 匿名参与与联合计算：问卷凭证盲签发、原子兑换及重试回执；固定参与集合、加密份额、独立聚合服务和签名核验。
 
@@ -44,4 +44,4 @@ MoonPrivacyKit 建设持续扩展、统一易用的隐私工具平台，面向�
 
 实际复用 [moon-privacy-budget](https://github.com/ppyq882/moon-privacy-budget) 0.1.1 的预算接口、[moon_scrub](https://github.com/yyqdbngt/moon-scrub) 0.5.2 的扫描脱敏，以及 [blindrsa-ts](https://github.com/cloudflare/blindrsa-ts) 0.4.6 的盲签名，均为 Apache-2.0；本项目同许可。非整库移植，基础机制与脱敏不作原创声明。
 
-差异贡献包括跨报表推断复验、同人连接约束、匿名资格兑换和分离聚合；相较 MoonSentinel 的单批核验，增加候选取舍与两版联查。合成工具从真实表的受保护统计生成替代数据，区别于确定性测试素材；参考 [SmartNoise MST](https://docs.smartnoise.org/synth/synthesizers/mst.html)（该模块 Apache-2.0），当前为独立实现的公开树基线，尚未移植自动选树。具体重叠见[生态定位](ECOSYSTEM_POSITIONING.md)，不宣称算法首创。私有检查不等于匿名认证，联合合计尚无差分隐私保证；后续完善关系选择与跨方结果保护。
+差异包括跨报表推断复验、同人连接约束、匿名资格兑换和分离聚合；相较 MoonSentinel 单批核验，增加候选取舍与两版联查。合成工具从受保护统计生成替代表格，参考 [SmartNoise MST](https://docs.smartnoise.org/synth/synthesizers/mst.html)（该模块 Apache-2.0），独立实现公开树基线；泄露实测参考 [TAPAS](https://github.com/alan-turing-institute/tapas)（MIT）方法，增加攻击实验而非预算日志审计。均非整库移植，不宣称算法首创；具体重叠见[生态定位](ECOSYSTEM_POSITIONING.md)。私有实测不等于匿名认证，联合合计尚无 DP 保证；后续完善自动关系选择与跨方结果保护。

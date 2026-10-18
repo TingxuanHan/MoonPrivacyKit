@@ -48,6 +48,9 @@ fn[T : ToJson] nullable_json(value : T?) -> Json {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "parsePrivacyAttackPlan" =>
+      parse_privacy_attack_plan(decode(field(request, "input")))
+    "evaluatePrivacyAttack" => evaluate_privacy_attack(request)
     "parseSyntheticPlan" => {
       let input : String = decode(field(request, "input"))
       if input.length() > 100000 {

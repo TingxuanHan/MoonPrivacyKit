@@ -4,6 +4,7 @@ import { initCollaboration } from './collaboration.mjs';
 import { initPlanningTools } from './planning-tools.mjs';
 import { initPrivacyWorkflow } from './privacy-workflow.mjs';
 import { initSynthetic } from './synthetic.mjs';
+import { initPrivacyAttack } from './privacy-attack.mjs';
 
 export function initAdvanced({ callCore, element: e, download }) {
   const text = (tag, value, attrs = {}) => e(tag, { ...attrs, text: value });
@@ -51,7 +52,7 @@ export function initAdvanced({ callCore, element: e, download }) {
       const section = e('div', { id, hidden: true });
       const tab = button(name, () => {
         sections.forEach(s => { s.section.hidden = s.section !== section; s.tab.setAttribute('aria-pressed', String(s.section === section)); });
-      }, { 'aria-pressed': 'false' });
+      }, { 'aria-pressed': 'false', 'data-tool': id });
       nav.append(tab); return { section, tab };
     });
     root.append(nav, ...sections.map(s => s.section));
@@ -60,10 +61,11 @@ export function initAdvanced({ callCore, element: e, download }) {
   }
   const ui = { e, text, button, field, file, read, panel, row, note, controller, callCore, download };
   initSynthetic(document.querySelector('#view-synthetic'), ui);
-  const [disclosure, person, comparison, versions, workflow] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查'], ['workflow-tool', '隐私流程检查']]);
+  const [disclosure, person, comparison, versions, workflow, attack] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查'], ['workflow-tool', '隐私流程检查'], ['attack-tool', '泄露实测']]);
   initDisclosure(disclosure, ui); initPersonQuery(person, ui);
   initPlanningTools(comparison, versions, ui);
   initPrivacyWorkflow(workflow, ui);
+  initPrivacyAttack(attack, ui);
   const [credential, joint] = tabs(document.querySelector('#view-collaboration'), '协作工具', '按角色保管文件，在资格核验、收卷与联合分析之间减少身份和数据暴露。', [['credential-tool', '匿名参与凭证'], ['joint-tool', '联合统计']]);
   initCollaboration(credential, joint, ui);
 }

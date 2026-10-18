@@ -46,6 +46,8 @@ pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
 
 pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
 
+pub fn evaluate_privacy_attack(Json) -> Json raise KitError
+
 pub fn inspect_disclosure(Json) -> Json raise KitError
 
 pub fn inspect_fields(String, String) -> Array[String] raise KitError
@@ -63,6 +65,8 @@ pub fn map_synthetic(Json, String, String) -> Json raise KitError
 pub fn map_table(String, String, TableMapping) -> MappedTable raise KitError
 
 pub fn parse_csv(String) -> CsvTable raise KitError
+
+pub fn parse_privacy_attack_plan(String) -> Json raise KitError
 
 pub fn parse_redaction_template(String) -> RedactionTemplate raise KitError
 

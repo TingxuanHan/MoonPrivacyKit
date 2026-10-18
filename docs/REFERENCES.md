@@ -19,6 +19,8 @@
 - [NIST IR 8053](https://csrc.nist.gov/pubs/ir/8053/final)：去标识化与剩余隐私风险的背景资料，用于字段处理、泛化及风险说明。
 - [ARX](https://github.com/arx-deidentifier/arx)（Apache-2.0）：[候选方案探索与可用性分析](https://arx.deidentifier.org/anonymization-tool/)的方法和产品参考，用于规划有限候选比较；当前没有复制代码，也不将 k-匿名、泛化或方案搜索声称为本项目发明。
 - [W3C Web Cryptography](https://www.w3.org/TR/webcrypto/)：浏览器安全随机数接口规范。
+- [TAPAS](https://github.com/alan-turing-institute/tapas/tree/a7069d7e040828db0da174d1b003fa03a98e5453)（MIT）：合成数据的对抗隐私评估方法参考，包含成员推断、属性推断等攻击。本项目的分类泄露实测采用独立 MoonBit 实现，未复制代码或移植完整 TAPAS；区别与限制见[实测说明](PRIVACY_ATTACK_AUDIT.md)。
+- [NIST 二项比例区间](https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm)：实测比例的 Wilson 近似区间公式参考；不把实验区间当作 DP 证明。
 
 ## 后续密码后端候选
 
@@ -37,4 +39,4 @@
 - [MoonSentinel](https://github.com/STW135-2026/moonsentinel)，Apache-2.0：已有单批次 k-匿名、l-diversity、用途／接收方核验和发布回执。作为功能对照，不将单次风险门禁另作本项目贡献。
 - [MoonRedactKit](https://github.com/xvkong834/MoonRedactKit)，Apache-2.0：敏感信息识别与脱敏策略。
 
-当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算、脱敏或 MPC 原语作为独占创新。八项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。合成数据对照于 2026-10-18 补充核对：moonbit-synthetic-vision 的视觉测试素材、moon-record-linkage 的确定性匹配评测数据，与本节点从真实分类表的受保护统计生成替代表格的任务不同；此结论限于所查看的公开说明和接口。
+当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算、脱敏或 MPC 原语作为独占创新。九项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。合成数据对照于 2026-10-18 补充核对：moonbit-synthetic-vision 的视觉测试素材、moon-record-linkage 的确定性匹配评测数据，与本节点从真实分类表的受保护统计生成替代表格的任务不同；同日补充的实测模块评估攻击表现，不把“审计日志”这一上游已有能力称为空白。结论限于检索范围和所查看的公开说明、接口。

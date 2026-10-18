@@ -27,7 +27,9 @@
 | 隐私流程检查：先限贡献再删标识可保留约束，反过来则定位阻断；两个新发布累计预算，图表复用同一发布 | 上游预算库已检查计划与预算，MoonSentinel 已核验单批发布。此模块检查跨步骤的数据状态、参数来源、人员约束和发布身份；精确联合合计不能伪装成受保护结果，未知操作不放行。通用编排和 DP 组合均不是新发明。 | [MoonBit 检查核心](../workflow.mbt)、[分支与失败用例](../tests/workflow.test.mjs)、[专门比较与边界](PRIVACY_WORKFLOWS.md) |
 | 隐私合成数据：公开字段关系树 → 一次按人 DP 测量 → 条件抽样 → 保存替代表格 | 上游预算/脱敏库提供基础能力；[moonbit-synthetic-vision](https://github.com/caassien/moonbit-synthetic-vision) 生成视觉测试素材，[moon-record-linkage](https://github.com/didiLjf/moon-record-linkage) 包含确定性匹配评测数据。本工具从真实分类表的受保护统计生成新表，共用累计预算，不复制原始记录。 | [MoonBit 模型与抽样](../synthetic.mbt)、[预算与故障测试](../tests/synthetic.test.mjs)、[来源和完整差异](SYNTHETIC_DATA.md) |
 
-以上八项均可在工作台或命令行使用；这比入口统一多了一层可单独验证的分析或协议行为。统一交付本身只是可用性贡献，不能代替上述核心能力。
+2026-10-18 增加第九项[隐私泄露实测](PRIVACY_ATTACK_AUDIT.md)：对固定分类合成表运行成员/属性推断，校准组选择阈值、独立测试组计分，比较误报率、基线与近似区间。不同于 moon-privacy-budget 的账本审计、moon_scrub 的内容规则或单批分组核验；也不同于本仓库已有的精确报表约束和两版关联检查。参考 TAPAS（MIT）公开攻击方法，独立实现受限 MoonBit 核心，未移植完整框架；不声明攻击算法原创。差异与检索边界、[核心代码](../privacy_attack.mbt)和[独立对照测试](../tests/privacy-attack.test.mjs)可逐项核对。
+
+以上九项均可在工作台或命令行使用；这比入口统一多了一层可单独验证的分析或协议行为。统一交付本身只是可用性贡献，不能代替上述核心能力。
 
 流程检查另与 [workflows.mbt](https://github.com/f4ah6o/workflows.mbt/tree/dac416614f892e91a48b94b35444bdefe5ee5a36) 对照：该项目是持久工作流兼容运行时，本模块是有限的隐私条件检查器，不调度或执行任务，也未复用其代码。其他语言的 [OpenDP Chaining](https://docs.opendp.org/en/stable/api/user-guide/combinators/chaining.html) 已有类型/度量匹配与机制组合；本模块针对本工具箱的跨工具声明及非 DP 输出边界，不能等同于 OpenDP 的证明体系。详细重叠与引用版本见[流程检查说明](PRIVACY_WORKFLOWS.md)。
 
@@ -49,5 +51,6 @@ MoonBit 生态已有 MPC 算法实现。[Juwan-Hwang/moon-certified 的 crypto/m
 - 本地原型和多进程测试不是生产级网络部署、安全审计或监管认证。
 - 流程检查只验证所声明的有限步骤；来源真实性、人员对应和预算快照不由它核实。它不执行发布，不改变实际账本，不是外部文件的可信证书。
 - 合成数据仅支持事先公开的分类域和关系树；同类方法在 SmartNoise 等其他语言项目已存在。本节点未移植 MST 自动选树或 Private-PGM，不保证高阶关系和稀有类别准确，也不声称完全复原原表。
+- 泄露实测是读取私有表的内部分析，不是 DP 后处理或匿名认证；真实参与关系、人群可比性与独立性仍须核验。攻击失败或区间包含零不能证明无泄露，私有评分也不能直接用作公开选参依据。
 
 其他语言中的 ARX、sdcTable、Tumult、RFC 9474 和 Prio 提供已知方法或问题参考，详见[来源](REFERENCES.md)。参赛差异定位于 MoonBit 中可审阅的任务实现及其约束组合，不声称发明这些方法。

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "unit_field": "person",
+  "known_fields": [
+    "group"
+  ],
+  "sensitive_field": "choice",
+  "sensitive_values": [
+    "yes",
+    "no"
+  ],
+  "split_seed": 20261018
+}

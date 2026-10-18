@@ -1,0 +1,568 @@
+{
+  "members": [
+    {
+      "person": "member-0",
+      "group": "pattern-0",
+      "choice": "yes"
+    },
+    {
+      "person": "member-1",
+      "group": "pattern-1",
+      "choice": "no"
+    },
+    {
+      "person": "member-2",
+      "group": "pattern-2",
+      "choice": "yes"
+    },
+    {
+      "person": "member-3",
+      "group": "pattern-3",
+      "choice": "no"
+    },
+    {
+      "person": "member-4",
+      "group": "pattern-4",
+      "choice": "yes"
+    },
+    {
+      "person": "member-5",
+      "group": "pattern-5",
+      "choice": "no"
+    },
+    {
+      "person": "member-6",
+      "group": "pattern-6",
+      "choice": "yes"
+    },
+    {
+      "person": "member-7",
+      "group": "pattern-7",
+      "choice": "no"
+    },
+    {
+      "person": "member-8",
+      "group": "pattern-8",
+      "choice": "yes"
+    },
+    {
+      "person": "member-9",
+      "group": "pattern-9",
+      "choice": "no"
+    },
+    {
+      "person": "member-10",
+      "group": "pattern-10",
+      "choice": "yes"
+    },
+    {
+      "person": "member-11",
+      "group": "pattern-11",
+      "choice": "no"
+    },
+    {
+      "person": "member-12",
+      "group": "pattern-12",
+      "choice": "yes"
+    },
+    {
+      "person": "member-13",
+      "group": "pattern-13",
+      "choice": "no"
+    },
+    {
+      "person": "member-14",
+      "group": "pattern-14",
+      "choice": "yes"
+    },
+    {
+      "person": "member-15",
+      "group": "pattern-15",
+      "choice": "no"
+    },
+    {
+      "person": "member-16",
+      "group": "pattern-16",
+      "choice": "yes"
+    },
+    {
+      "person": "member-17",
+      "group": "pattern-17",
+      "choice": "no"
+    },
+    {
+      "person": "member-18",
+      "group": "pattern-18",
+      "choice": "yes"
+    },
+    {
+      "person": "member-19",
+      "group": "pattern-19",
+      "choice": "no"
+    },
+    {
+      "person": "member-20",
+      "group": "pattern-20",
+      "choice": "yes"
+    },
+    {
+      "person": "member-21",
+      "group": "pattern-21",
+      "choice": "no"
+    },
+    {
+      "person": "member-22",
+      "group": "pattern-22",
+      "choice": "yes"
+    },
+    {
+      "person": "member-23",
+      "group": "pattern-23",
+      "choice": "no"
+    },
+    {
+      "person": "member-24",
+      "group": "pattern-24",
+      "choice": "yes"
+    },
+    {
+      "person": "member-25",
+      "group": "pattern-25",
+      "choice": "no"
+    },
+    {
+      "person": "member-26",
+      "group": "pattern-26",
+      "choice": "yes"
+    },
+    {
+      "person": "member-27",
+      "group": "pattern-27",
+      "choice": "no"
+    },
+    {
+      "person": "member-28",
+      "group": "pattern-28",
+      "choice": "yes"
+    },
+    {
+      "person": "member-29",
+      "group": "pattern-29",
+      "choice": "no"
+    },
+    {
+      "person": "member-30",
+      "group": "pattern-30",
+      "choice": "yes"
+    },
+    {
+      "person": "member-31",
+      "group": "pattern-31",
+      "choice": "no"
+    },
+    {
+      "person": "member-32",
+      "group": "pattern-32",
+      "choice": "yes"
+    },
+    {
+      "person": "member-33",
+      "group": "pattern-33",
+      "choice": "no"
+    },
+    {
+      "person": "member-34",
+      "group": "pattern-34",
+      "choice": "yes"
+    },
+    {
+      "person": "member-35",
+      "group": "pattern-35",
+      "choice": "no"
+    },
+    {
+      "person": "member-36",
+      "group": "pattern-36",
+      "choice": "yes"
+    },
+    {
+      "person": "member-37",
+      "group": "pattern-37",
+      "choice": "no"
+    },
+    {
+      "person": "member-38",
+      "group": "pattern-38",
+      "choice": "yes"
+    },
+    {
+      "person": "member-39",
+      "group": "pattern-39",
+      "choice": "no"
+    }
+  ],
+  "nonmembers": [
+    {
+      "person": "control-0",
+      "group": "pattern-40",
+      "choice": "yes"
+    },
+    {
+      "person": "control-1",
+      "group": "pattern-41",
+      "choice": "no"
+    },
+    {
+      "person": "control-2",
+      "group": "pattern-42",
+      "choice": "yes"
+    },
+    {
+      "person": "control-3",
+      "group": "pattern-43",
+      "choice": "no"
+    },
+    {
+      "person": "control-4",
+      "group": "pattern-44",
+      "choice": "yes"
+    },
+    {
+      "person": "control-5",
+      "group": "pattern-45",
+      "choice": "no"
+    },
+    {
+      "person": "control-6",
+      "group": "pattern-46",
+      "choice": "yes"
+    },
+    {
+      "person": "control-7",
+      "group": "pattern-47",
+      "choice": "no"
+    },
+    {
+      "person": "control-8",
+      "group": "pattern-48",
+      "choice": "yes"
+    },
+    {
+      "person": "control-9",
+      "group": "pattern-49",
+      "choice": "no"
+    },
+    {
+      "person": "control-10",
+      "group": "pattern-50",
+      "choice": "yes"
+    },
+    {
+      "person": "control-11",
+      "group": "pattern-51",
+      "choice": "no"
+    },
+    {
+      "person": "control-12",
+      "group": "pattern-52",
+      "choice": "yes"
+    },
+    {
+      "person": "control-13",
+      "group": "pattern-53",
+      "choice": "no"
+    },
+    {
+      "person": "control-14",
+      "group": "pattern-54",
+      "choice": "yes"
+    },
+    {
+      "person": "control-15",
+      "group": "pattern-55",
+      "choice": "no"
+    },
+    {
+      "person": "control-16",
+      "group": "pattern-56",
+      "choice": "yes"
+    },
+    {
+      "person": "control-17",
+      "group": "pattern-57",
+      "choice": "no"
+    },
+    {
+      "person": "control-18",
+      "group": "pattern-58",
+      "choice": "yes"
+    },
+    {
+      "person": "control-19",
+      "group": "pattern-59",
+      "choice": "no"
+    },
+    {
+      "person": "control-20",
+      "group": "pattern-60",
+      "choice": "yes"
+    },
+    {
+      "person": "control-21",
+      "group": "pattern-61",
+      "choice": "no"
+    },
+    {
+      "person": "control-22",
+      "group": "pattern-62",
+      "choice": "yes"
+    },
+    {
+      "person": "control-23",
+      "group": "pattern-63",
+      "choice": "no"
+    },
+    {
+      "person": "control-24",
+      "group": "pattern-64",
+      "choice": "yes"
+    },
+    {
+      "person": "control-25",
+      "group": "pattern-65",
+      "choice": "no"
+    },
+    {
+      "person": "control-26",
+      "group": "pattern-66",
+      "choice": "yes"
+    },
+    {
+      "person": "control-27",
+      "group": "pattern-67",
+      "choice": "no"
+    },
+    {
+      "person": "control-28",
+      "group": "pattern-68",
+      "choice": "yes"
+    },
+    {
+      "person": "control-29",
+      "group": "pattern-69",
+      "choice": "no"
+    },
+    {
+      "person": "control-30",
+      "group": "pattern-70",
+      "choice": "yes"
+    },
+    {
+      "person": "control-31",
+      "group": "pattern-71",
+      "choice": "no"
+    },
+    {
+      "person": "control-32",
+      "group": "pattern-72",
+      "choice": "yes"
+    },
+    {
+      "person": "control-33",
+      "group": "pattern-73",
+      "choice": "no"
+    },
+    {
+      "person": "control-34",
+      "group": "pattern-74",
+      "choice": "yes"
+    },
+    {
+      "person": "control-35",
+      "group": "pattern-75",
+      "choice": "no"
+    },
+    {
+      "person": "control-36",
+      "group": "pattern-76",
+      "choice": "yes"
+    },
+    {
+      "person": "control-37",
+      "group": "pattern-77",
+      "choice": "no"
+    },
+    {
+      "person": "control-38",
+      "group": "pattern-78",
+      "choice": "yes"
+    },
+    {
+      "person": "control-39",
+      "group": "pattern-79",
+      "choice": "no"
+    }
+  ],
+  "released": [
+    {
+      "group": "pattern-0",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-1",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-2",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-3",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-4",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-5",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-6",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-7",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-8",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-9",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-10",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-11",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-12",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-13",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-14",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-15",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-16",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-17",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-18",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-19",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-20",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-21",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-22",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-23",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-24",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-25",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-26",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-27",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-28",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-29",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-30",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-31",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-32",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-33",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-34",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-35",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-36",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-37",
+      "choice": "no"
+    },
+    {
+      "group": "pattern-38",
+      "choice": "yes"
+    },
+    {
+      "group": "pattern-39",
+      "choice": "no"
+    }
+  ]
+}

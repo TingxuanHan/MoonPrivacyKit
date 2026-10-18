@@ -298,6 +298,21 @@ summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 5px 0
 .synthetic-field legend { color: var(--green); font-weight: 600; padding: 0 8px; }
 .synthetic-field .field:last-child { margin-bottom: 0; }
 .synthetic-summary { font-weight: 600; color: var(--green); }
+.attack-candidate { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.attack-verdict { border-left: 3px solid var(--amber); padding: 10px 14px; background: #fff8ed; }
+.attack-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 18px 0; }
+.attack-metrics dt { color: var(--muted); }
+.attack-metrics dd { margin: 5px 0 0; font-weight: 600; }
+#attack-tool p, #attack-tool dd { overflow-wrap: anywhere; }
+#attack-results:focus { outline-offset: 4px; }
+#attack-results table { min-width: 640px; }
+#attack-tool .attack-confirm { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
+#attack-tool .attack-confirm input { order: -1; width: auto; flex: 0 0 auto; margin-top: 5px; }
+@media(max-width:600px) {
+  .attack-metrics { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  #view-review .subnav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
+  #view-review .subnav button { width: 100%; }
+}
 .synthetic-preview { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin: 16px 0; }
 .synthetic-preview table { width: 100%; border-collapse: collapse; text-align: left; }
 .synthetic-preview th, .synthetic-preview td { padding: 10px 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }

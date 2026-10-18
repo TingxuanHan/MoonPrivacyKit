@@ -14,6 +14,7 @@ node cli/main.mjs assess-survey <问卷.json> <每次人数> <目标误差百分
 node cli/main.mjs plan <方案.json> <新报告.json>
 node cli/main.mjs inspect-reports <报表模型.json> <新检查.json>
 node cli/main.mjs check-workflow <流程方案.json> <新检查.json>
+node cli/main.mjs audit-synthetic <评估配置.json> <成员.csv|json> <对照.csv|json> <合成表或生成记录.csv|json> <内部实测.json>
 node cli/main.mjs compare-plans <csv|json> <原表> <候选配置.json> <内部比较.json>
 node cli/main.mjs compare-versions <csv|json> <第一版> <csv|json> <第二版> <对应配置.json> <内部检查.json>
 node cli/main.mjs scan-fields <csv|json> <原表> <内部扫描.json>
@@ -77,6 +78,15 @@ async function main() {
     const { ledgerStatus } = await import('../runtime/ledger.mjs');
     console.log(JSON.stringify(ledgerStatus(args[0]), null, 2));
     return;
+  } else if (command === 'audit-synthetic' && args.length === 5) {
+    requireNew([args[4]]);
+    const { evaluatePrivacyAttack, parsePrivacyAttackPlan } = await import('../runtime/privacy-attack.mjs');
+    const source = path => {
+      const format = /\.csv$/i.test(path) ? 'csv' : /\.json$/i.test(path) ? 'json' : null;
+      if (!format) throw new Error('Audit inputs must use .csv or .json extensions.');
+      return { format, input: readText(path, true) };
+    };
+    writeNew(args[4], evaluatePrivacyAttack({ config: parsePrivacyAttackPlan(readText(args[0], true)), members: source(args[1]), nonmembers: source(args[2]), released: source(args[3]) }));
   } else if (command === 'plan-synthetic' && args.length === 2) {
     requireNew([args[1]]);
     const { planSynthetic, parseSyntheticPlan } = await import('../runtime/synthetic.mjs');
