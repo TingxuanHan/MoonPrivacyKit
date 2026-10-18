@@ -9,9 +9,9 @@ const commands = [
   ['moon', ['test', '--target', 'wasm']],
   ['moon', ['test', '--target', 'js']],
   [process.execPath, ['scripts/build.mjs']],
-  [process.execPath, ['--test', 'tests/runtime.test.mjs', 'tests/cli.test.mjs', 'tests/evaluation.test.mjs', 'tests/central.test.mjs', 'tests/ledger.test.mjs', 'tests/table.test.mjs', 'tests/workbench.test.mjs', 'tests/templates.test.mjs', 'tests/redaction-templates.test.mjs', 'tests/generalization.test.mjs', 'tests/survey-templates.test.mjs', 'tests/survey-assessment.test.mjs', 'tests/report-export.test.mjs', 'tests/disclosure.test.mjs', 'tests/person-query.test.mjs', 'tests/credentials.test.mjs', 'tests/secure-aggregation.test.mjs', 'tests/planning-tools.test.mjs', 'tests/workflow.test.mjs']],
+  [process.execPath, ['--test', 'tests/runtime.test.mjs', 'tests/cli.test.mjs', 'tests/evaluation.test.mjs', 'tests/central.test.mjs', 'tests/ledger.test.mjs', 'tests/table.test.mjs', 'tests/workbench.test.mjs', 'tests/templates.test.mjs', 'tests/redaction-templates.test.mjs', 'tests/generalization.test.mjs', 'tests/survey-templates.test.mjs', 'tests/survey-assessment.test.mjs', 'tests/report-export.test.mjs', 'tests/disclosure.test.mjs', 'tests/person-query.test.mjs', 'tests/credentials.test.mjs', 'tests/secure-aggregation.test.mjs', 'tests/planning-tools.test.mjs', 'tests/workflow.test.mjs', 'tests/synthetic.test.mjs']],
 ];
-if (process.argv.includes('--ui')) commands.push([process.execPath, ['--test', 'tests/ui.test.mjs', 'tests/report-ui.test.mjs', 'tests/advanced-ui.test.mjs', 'tests/workflow-ui.test.mjs']]);
+if (process.argv.includes('--ui')) commands.push([process.execPath, ['--test', 'tests/ui.test.mjs', 'tests/report-ui.test.mjs', 'tests/advanced-ui.test.mjs', 'tests/workflow-ui.test.mjs', 'tests/synthetic-ui.test.mjs']]);
 for (const [command, args] of commands) {
   const result = spawnSync(command, args, { cwd: root, stdio: 'inherit' });
   if (result.error || result.status !== 0) { console.error('Verification stopped at the failed check.'); process.exit(result.status || 1); }

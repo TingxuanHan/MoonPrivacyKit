@@ -2,6 +2,8 @@
 
 ## 方法参考
 
+- [SmartNoise MST](https://docs.smartnoise.org/synth/synthesizers/mst.html) 与 [McKenna 等的论文](https://arxiv.org/abs/2108.04978)：私有测量与图模型合成的参考。SDK 根目录 MIT，[MST 子目录](https://github.com/opendp/smartnoise-sdk/blob/main/synth/snsynth/mst/LICENSE) Apache-2.0。本节点独立实现公开树基线，未移植自动选树、Private-PGM 或其预处理代码；实现范围与相近 MoonBit 仓库对照见[合成数据](SYNTHETIC_DATA.md)。
+
 - [RFC 9474](https://www.rfc-editor.org/rfc/rfc9474.html)、[Cloudflare blindrsa-ts](https://github.com/cloudflare/blindrsa-ts)：匿名参与凭证的标准与实际密码组件；[RFC 9576](https://www.rfc-editor.org/rfc/rfc9576.html) 为角色分离与关联风险的背景。
 - [sdcTable](https://sdctools.github.io/sdcTable/articles/sdcTable.html)：统计披露控制问题参考，GPL 源码没有复制或依赖。
 - [Tumult 私有连接](https://docs.tmlt.dev/analytics/v0.21/reference/api/tmlt.analytics.QueryBuilder.join_private.html)：按人所有权与连接贡献约束的参考，未复制实现。
@@ -35,4 +37,4 @@
 - [MoonSentinel](https://github.com/STW135-2026/moonsentinel)，Apache-2.0：已有单批次 k-匿名、l-diversity、用途／接收方核验和发布回执。作为功能对照，不将单次风险门禁另作本项目贡献。
 - [MoonRedactKit](https://github.com/xvkong834/MoonRedactKit)，Apache-2.0：敏感信息识别与脱敏策略。
 
-当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算、脱敏或 MPC 原语作为独占创新。七项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。
+当前组合已有基础组件与本项目新增任务核心，不把基础机制、预算、脱敏或 MPC 原语作为独占创新。八项实现、对应反例和与相近项目的区别见[生态定位](ECOSYSTEM_POSITIONING.md)。合成数据对照于 2026-10-18 补充核对：moonbit-synthetic-vision 的视觉测试素材、moon-record-linkage 的确定性匹配评测数据，与本节点从真实分类表的受保护统计生成替代表格的任务不同；此结论限于所查看的公开说明和接口。

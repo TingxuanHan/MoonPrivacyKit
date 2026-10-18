@@ -40,6 +40,8 @@ pub fn dispatch(String) -> String
 
 pub fn dispatch_central(String, (Int) -> Int) -> String
 
+pub fn dispatch_synthetic(String, (Int) -> Int) -> String
+
 pub fn error_radius(Mechanism, Int, Double) -> Double raise KitError
 
 pub fn estimate(Mechanism, Array[Int], alpha? : Double) -> Estimate raise KitError
@@ -55,6 +57,8 @@ pub fn make_central_mechanism(Int, Double, Int) -> CentralMechanism raise KitErr
 pub fn make_mechanism(Int, Double) -> Mechanism raise KitError
 
 pub fn map_person_query(Json, String, String, String, String) -> Json raise KitError
+
+pub fn map_synthetic(Json, String, String) -> Json raise KitError
 
 pub fn map_table(String, String, TableMapping) -> MappedTable raise KitError
 
@@ -73,6 +77,8 @@ pub fn parse_survey_template(String) -> SurveyTemplate raise KitError
 pub fn plan_person_query(Json) -> Json raise KitError
 
 pub fn plan_survey(Array[Mechanism], Int, collections? : Int, alpha? : Double) -> PrivacyPlan raise KitError
+
+pub fn plan_synthetic(Json) -> Json raise KitError
 
 pub fn prepare_redaction_handoff(RedactionTemplate, String, String) -> RedactionHandoff raise KitError
 

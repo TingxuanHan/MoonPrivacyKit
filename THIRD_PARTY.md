@@ -14,3 +14,5 @@
 运行依赖在 package-lock.json 固定。浏览器产物随附许可证文件，仓库中的 licenses 目录保留上游声明。MoonBit 原生计算与宿主密码组件的职责分别记载于各工具文档。
 
 sdcTable 为 GPL 许可的 R 项目，此处仅参考其统计披露控制的问题定义，没有移植或依赖其源码。Tumult Analytics 用作按人贡献和多表关联的设计参考，没有复制其源码。Prio 用于说明多服务秘密分享聚合的研究背景；本项目有限原型不实现其恶意客户端证明体系。
+
+隐私合成数据参考 [SmartNoise MST](https://docs.smartnoise.org/synth/synthesizers/mst.html) 的问题与方法，当前独立实现公开树基线，没有复制或依赖其源码。[SmartNoise SDK](https://github.com/opendp/smartnoise-sdk) 根目录为 MIT，[MST 子目录](https://github.com/opendp/smartnoise-sdk/blob/main/synth/snsynth/mst/LICENSE) 为 Apache-2.0；后续迁移须按实际文件保留声明，不能只依据根许可证。详见[合成数据来源](docs/SYNTHETIC_DATA.md)。

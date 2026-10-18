@@ -2,6 +2,7 @@
 // the selected project and a pending request ID used to recover a saved release.
 import { parseStatisticsTemplate, createStatisticsTemplate, checkStatisticsTemplate } from '/runtime/templates.mjs';
 import { reportActions } from '/web/report-actions.mjs';
+import { syntheticResult } from '/web/synthetic-result.mjs';
 
 export function initStatistics({ callCore, element, download }) {
   const $ = id => document.getElementById(`stats-${id}`);
@@ -106,7 +107,7 @@ export function initStatistics({ callCore, element, download }) {
       const button = element('button', { type: 'button', class: 'secondary', text: '查看报告', 'aria-label': `查看第 ${data.total - data.offset - data.items.indexOf(item)} 次报告` });
       button.addEventListener('click', () => run(async () => showReport(await api(`${projectPath()}/releases/${item.request_id}`))));
       $('history').append(element('div', { class: 'history-row' }, [element('div', {}, [
-        element('h3', { text: `第 ${data.total - data.offset - data.items.indexOf(item)} 次 · ${item.query === 'count' ? '计数' : item.query === 'bounded_sum' ? '整数总和' : '类别分布'}` }),
+        element('h3', { text: `第 ${data.total - data.offset - data.items.indexOf(item)} 次 · ${item.kind === 'synthetic-table' ? '合成数据' : item.query === 'count' ? '计数' : item.query === 'bounded_sum' ? '整数总和' : '类别分布'}` }),
         element('p', { text: `ε ${item.epsilon} · 每人最多 ${item.max_contributions} 条${item.categories.length ? ` · ${item.categories.length} 个公开类别` : ''}` }),
       ]), button]));
     }
@@ -146,6 +147,10 @@ export function initStatistics({ callCore, element, download }) {
     if (pending) await finish(await api(`${projectPath()}/releases/${pending.requestId}`));
   }
   function showReport(result) {
+    if (result.synthetic) {
+      $('report').replaceChildren(syntheticResult(result, { element, download }));
+      $('report').hidden = false; $('report').focus({ preventScroll: true }); return;
+    }
     const r = result.report;
     const interval = value => `${Math.max(0, value - r.absolute_error_bound)}–${Math.min(r.output_upper, value + r.absolute_error_bound)}`;
     const save = reportActions({ kind: 'statistics', report: result, filename: `private-statistics-${result.release_id}`, jsonLabel: '下载这份报告', jsonClass: 'primary', element, download });

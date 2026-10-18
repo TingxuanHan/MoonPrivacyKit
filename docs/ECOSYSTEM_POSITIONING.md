@@ -1,6 +1,6 @@
 # 既有项目关系与差异化贡献
 
-核对日期：2026-10-16；MPC 专项补充核对：2026-10-17。本文与[申报书](APPLICATION.md)一起说明实际复用、已完成扩展及边界。比较基于已核对的公开源码和接口，不是对其他项目功能的穷尽审计，也不构成全生态唯一性或算法首创声明。
+核对日期：2026-10-16；MPC 专项补充核对：2026-10-17；分类数据合成对照：2026-10-18。本文与[申报书](APPLICATION.md)一起说明实际复用、已完成扩展及边界。比较基于已核对的公开源码和接口，不是对其他项目功能的穷尽审计，也不构成全生态唯一性或算法首创声明。
 
 ## 实际复用关系
 
@@ -25,8 +25,9 @@
 | 处理方案比较：同一表按有限候选比较分组风险、规则损失、字段保留与约束可行性，再明确导出副本 | [MoonSentinel](https://github.com/STW135-2026/moonsentinel/tree/f85a56d3800b5864cd0c6e579d12647e7c27e62b) 已有单批 k/l、用途/接收方核验及发布回执；本工具重点是多个候选的取舍和未被同时改善的可行集合，单次 k 检查不是新增算法。 | [分析核心](../planning_tools.mbt)、[手算与失败路径](../tests/planning-tools.test.mjs)、[设计](PRIVACY_PLANNING_TOOLS.md) |
 | 两版数据联合检查：两版最小组都为 2，关联后最小组为 1 | 检查同一群体跨版本可见信息的交叉细分，要求一人一行与可靠私有对应；不把无法对应当作通过，不建立原表备份。 | [分析核心](../planning_tools.mbt)、[四行反例](../planning_tools_wbtest.mbt)、[浏览器流程](../tests/advanced-ui.test.mjs) |
 | 隐私流程检查：先限贡献再删标识可保留约束，反过来则定位阻断；两个新发布累计预算，图表复用同一发布 | 上游预算库已检查计划与预算，MoonSentinel 已核验单批发布。此模块检查跨步骤的数据状态、参数来源、人员约束和发布身份；精确联合合计不能伪装成受保护结果，未知操作不放行。通用编排和 DP 组合均不是新发明。 | [MoonBit 检查核心](../workflow.mbt)、[分支与失败用例](../tests/workflow.test.mjs)、[专门比较与边界](PRIVACY_WORKFLOWS.md) |
+| 隐私合成数据：公开字段关系树 → 一次按人 DP 测量 → 条件抽样 → 保存替代表格 | 上游预算/脱敏库提供基础能力；[moonbit-synthetic-vision](https://github.com/caassien/moonbit-synthetic-vision) 生成视觉测试素材，[moon-record-linkage](https://github.com/didiLjf/moon-record-linkage) 包含确定性匹配评测数据。本工具从真实分类表的受保护统计生成新表，共用累计预算，不复制原始记录。 | [MoonBit 模型与抽样](../synthetic.mbt)、[预算与故障测试](../tests/synthetic.test.mjs)、[来源和完整差异](SYNTHETIC_DATA.md) |
 
-以上七项均可在工作台或命令行使用；这比入口统一多了一层可单独验证的分析或协议行为。统一交付本身只是可用性贡献，不能代替上述核心能力。
+以上八项均可在工作台或命令行使用；这比入口统一多了一层可单独验证的分析或协议行为。统一交付本身只是可用性贡献，不能代替上述核心能力。
 
 流程检查另与 [workflows.mbt](https://github.com/f4ah6o/workflows.mbt/tree/dac416614f892e91a48b94b35444bdefe5ee5a36) 对照：该项目是持久工作流兼容运行时，本模块是有限的隐私条件检查器，不调度或执行任务，也未复用其代码。其他语言的 [OpenDP Chaining](https://docs.opendp.org/en/stable/api/user-guide/combinators/chaining.html) 已有类型/度量匹配与机制组合；本模块针对本工具箱的跨工具声明及非 DP 输出边界，不能等同于 OpenDP 的证明体系。详细重叠与引用版本见[流程检查说明](PRIVACY_WORKFLOWS.md)。
 
@@ -47,5 +48,6 @@ MoonBit 生态已有 MPC 算法实现。[Juwan-Hwang/moon-certified 的 crypto/m
 - 联合统计要求参与方遵守协议且至少一个聚合方不串通；签名不等于恶意输入范围证明，精确输出不等于 DP。未实现 Prio 的证明体系。
 - 本地原型和多进程测试不是生产级网络部署、安全审计或监管认证。
 - 流程检查只验证所声明的有限步骤；来源真实性、人员对应和预算快照不由它核实。它不执行发布，不改变实际账本，不是外部文件的可信证书。
+- 合成数据仅支持事先公开的分类域和关系树；同类方法在 SmartNoise 等其他语言项目已存在。本节点未移植 MST 自动选树或 Private-PGM，不保证高阶关系和稀有类别准确，也不声称完全复原原表。
 
 其他语言中的 ARX、sdcTable、Tumult、RFC 9474 和 Prio 提供已知方法或问题参考，详见[来源](REFERENCES.md)。参赛差异定位于 MoonBit 中可审阅的任务实现及其约束组合，不声称发明这些方法。

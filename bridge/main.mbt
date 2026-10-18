@@ -12,6 +12,14 @@ pub fn dispatch_central(
 }
 
 ///|
+pub fn dispatch_synthetic(
+  input : String,
+  random_below : (Int32) -> Int32,
+) -> String {
+  @kit.dispatch_synthetic(input, random_below)
+}
+
+///|
 fn main {
   ()
 }

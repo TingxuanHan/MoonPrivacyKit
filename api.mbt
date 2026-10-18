@@ -48,6 +48,23 @@ fn[T : ToJson] nullable_json(value : T?) -> Json {
 fn execute_request(request : Json) -> Json raise KitError {
   let op : String = decode(field(request, "op"))
   match op {
+    "parseSyntheticPlan" => {
+      let input : String = decode(field(request, "input"))
+      if input.length() > 100000 {
+        raise KitError("synthetic plan exceeds input limit")
+      }
+      let value = read_json(input)
+      reject_duplicate_table_keys(input)
+      ignore(plan_synthetic(value))
+      value
+    }
+    "planSynthetic" => plan_synthetic(field(request, "plan"))
+    "mapSynthetic" =>
+      map_synthetic(
+        field(request, "plan"),
+        decode(field(request, "format")),
+        decode(field(request, "input")),
+      )
     "checkPrivacyWorkflow" =>
       check_privacy_workflow(decode(field(request, "input")))
     "inspectDisclosure" => inspect_disclosure(field(request, "model"))

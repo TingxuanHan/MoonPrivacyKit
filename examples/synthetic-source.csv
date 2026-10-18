@@ -1,0 +1,7 @@
+person,group,choice
+demo-01,student,yes
+demo-02,student,yes
+demo-03,student,no
+demo-04,staff,no
+demo-05,staff,no
+demo-06,staff,yes

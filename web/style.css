@@ -293,6 +293,20 @@ summary { cursor: pointer; color: var(--green); font-weight: 600; padding: 5px 0
 #view-review .result-box, #view-collaboration .result-box { margin-top: 18px; }
 @media(max-width:600px) { .constraint-item { grid-template-columns: minmax(0,1fr); } }
 
+.synthetic-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 20px 0; }
+.synthetic-field { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 16px; background: #f8faf9; }
+.synthetic-field legend { color: var(--green); font-weight: 600; padding: 0 8px; }
+.synthetic-field .field:last-child { margin-bottom: 0; }
+.synthetic-summary { font-weight: 600; color: var(--green); }
+.synthetic-preview { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin: 16px 0; }
+.synthetic-preview table { width: 100%; border-collapse: collapse; text-align: left; }
+.synthetic-preview th, .synthetic-preview td { padding: 10px 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.synthetic-preview th { background: var(--soft); }
+.synthetic-preview caption { text-align: left; padding: 10px 14px; caption-side: bottom; }
+#view-synthetic .field, #view-synthetic select { min-width: 0; max-width: 100%; }
+#view-synthetic p { overflow-wrap: anywhere; }
+@media(max-width:600px) { .synthetic-fields { grid-template-columns: minmax(0,1fr); } .synthetic-field { padding: 12px; } }
+
 .workflow-sequence { display: grid; gap: 16px; list-style: none; padding: 0; }
 .workflow-step, .workflow-source { min-width: 0; padding: 16px; border: 1px solid #d7e4de; border-radius: 8px; background: #f8faf9; }
 .workflow-source { margin: 12px 0; }

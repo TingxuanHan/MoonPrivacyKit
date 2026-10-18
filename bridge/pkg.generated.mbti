@@ -6,6 +6,8 @@ pub fn dispatch(String) -> String
 
 pub fn dispatch_central(String, (Int) -> Int) -> String
 
+pub fn dispatch_synthetic(String, (Int) -> Int) -> String
+
 // Errors
 
 // Types and methods

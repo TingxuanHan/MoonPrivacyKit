@@ -1,4 +1,4 @@
-import { dispatch, dispatch_central } from '../dist/core.js';
+import { dispatch, dispatch_central, dispatch_synthetic } from '../dist/core.js';
 
 export function callCore(request) {
   const result = JSON.parse(dispatch(JSON.stringify(request)));
@@ -113,4 +113,12 @@ export function centralHistogram(unitIds, categoryIds, { categoryCount, epsilon,
 // Nonnegative integer sums with declared clipping and add/remove-person bounds.
 export function centralSum(unitIds, values, { epsilon, maxContributions = 1, valueUpper } = {}) {
   return releaseCentral({ op: 'centralSum', unit_ids: unitIds, values, epsilon, max_contributions: maxContributions, value_upper: valueUpper });
+}
+
+// Samples only from protected measurements. Persistence belongs to the ledger;
+// callers must not rerun this function when downloading a saved artifact.
+export function sampleSynthetic(plan, counts) {
+  const result = JSON.parse(dispatch_synthetic(JSON.stringify({ plan, counts }), centralRandomSource()));
+  if (!result.ok) throw new Error(result.error);
+  return result.data;
 }

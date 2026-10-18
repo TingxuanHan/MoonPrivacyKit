@@ -19,6 +19,9 @@ node cli/main.mjs compare-versions <csv|json> <第一版> <csv|json> <第二版>
 node cli/main.mjs scan-fields <csv|json> <原表> <内部扫描.json>
 node cli/main.mjs scrub-text <原文本> <处理结果.json>
 node cli/main.mjs plan-person-query <关联方案.json> <新解释.json>
+node cli/main.mjs plan-synthetic <公开合成方案.json> <新解释.json>
+node cli/main.mjs synthesize <账本.sqlite> <公开合成方案.json> <csv|json> <原表> <请求编号> <epsilon> <新结果.json>
+node cli/main.mjs export-synthetic <账本.sqlite> <请求编号> <新合成表.csv>
 node cli/main.mjs publish-person-query <账本.sqlite> <关联方案.json> <csv|json> <左表> <csv|json> <右表> <请求编号> <epsilon> <新报告.json>
 node cli/main.mjs export-report <survey|assessment|statistics|plan> <已有报告.json> <新报告.html>
 node cli/main.mjs protect <问卷.json> <新回答.json>
@@ -74,6 +77,20 @@ async function main() {
     const { ledgerStatus } = await import('../runtime/ledger.mjs');
     console.log(JSON.stringify(ledgerStatus(args[0]), null, 2));
     return;
+  } else if (command === 'plan-synthetic' && args.length === 2) {
+    requireNew([args[1]]);
+    const { planSynthetic, parseSyntheticPlan } = await import('../runtime/synthetic.mjs');
+    writeNew(args[1], planSynthetic(parseSyntheticPlan(readText(args[0], true))));
+  } else if (command === 'synthesize' && args.length === 7) {
+    requireNew([args[6]]);
+    const { publishSynthetic, parseSyntheticPlan } = await import('../runtime/synthetic.mjs');
+    writeNew(args[6], publishSynthetic(args[0], { plan: parseSyntheticPlan(readText(args[1], true)), format: args[2], input: readText(args[3], true), requestId: args[4], epsilon: args[5] }));
+  } else if (command === 'export-synthetic' && args.length === 3) {
+    requireNew([args[2]]);
+    const { savedRelease } = await import('../runtime/ledger.mjs');
+    const result = savedRelease(args[0], args[1]);
+    if (result.synthetic?.kind !== 'moonprivacykit/synthetic-table') throw new Error('The saved release is not a synthetic table.');
+    writeNew(args[2], result.synthetic.csv);
   } else if (command === 'publish' && args.length === 3) {
     requireNew([args[2]]);
     const { publishRelease } = await import('../runtime/ledger.mjs');

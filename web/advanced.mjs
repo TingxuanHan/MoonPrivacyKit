@@ -3,6 +3,7 @@ import { initPersonQuery } from './person-query.mjs';
 import { initCollaboration } from './collaboration.mjs';
 import { initPlanningTools } from './planning-tools.mjs';
 import { initPrivacyWorkflow } from './privacy-workflow.mjs';
+import { initSynthetic } from './synthetic.mjs';
 
 export function initAdvanced({ callCore, element: e, download }) {
   const text = (tag, value, attrs = {}) => e(tag, { ...attrs, text: value });
@@ -31,9 +32,9 @@ export function initAdvanced({ callCore, element: e, download }) {
     return async (action, done = '已完成。') => {
       if (busy) return;
       busy = true;
-      const controls = [...root.querySelectorAll('input,select,button')].map(n => [n, n.disabled]);
+      const controls = [...root.querySelectorAll('input,select,textarea,button')].map(n => [n, n.disabled]);
       controls.forEach(([n]) => { n.disabled = true; });
-      status.hidden = false; status.classList.remove('error'); status.textContent = '正在处理…';
+      status.hidden = false; status.classList.remove('error'); status.setAttribute('role', 'status'); status.textContent = '正在处理…';
       try { await action(); status.textContent = done; }
       catch (error) {
         status.classList.add('error'); status.setAttribute('role', 'alert');
@@ -58,6 +59,7 @@ export function initAdvanced({ callCore, element: e, download }) {
     return sections.map(s => s.section);
   }
   const ui = { e, text, button, field, file, read, panel, row, note, controller, callCore, download };
+  initSynthetic(document.querySelector('#view-synthetic'), ui);
   const [disclosure, person, comparison, versions, workflow] = tabs(document.querySelector('#view-review'), '发布检查', '比较处理方案、核对组合披露风险，再选择合适的发布方式。', [['disclosure-tool', '报表防反推'], ['person-tool', '按人保护的多表统计'], ['comparison-tool', '处理方案比较'], ['versions-tool', '两版数据联查'], ['workflow-tool', '隐私流程检查']]);
   initDisclosure(disclosure, ui); initPersonQuery(person, ui);
   initPlanningTools(comparison, versions, ui);

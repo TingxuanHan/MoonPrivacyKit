@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "unit_field": "person",
+  "output_rows": 500,
+  "fields": [
+    { "name": "group", "categories": ["student", "staff"], "parent": -1 },
+    { "name": "choice", "categories": ["yes", "no"], "parent": 0 }
+  ]
+}

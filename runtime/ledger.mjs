@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { openSync, closeSync, lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { randomBytes, randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
-import { callCore, centralCount, centralHistogram, centralSum } from './client.mjs';
+import { callCore, centralCount, centralHistogram, centralSum, sampleSynthetic } from './client.mjs';
 
 const SCALE = 1_000_000;
 const APPLICATION_ID = 0x4d504b31;
@@ -69,7 +69,7 @@ function normalizeRequest(input) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !['count', 'histogram', 'bounded_sum'].includes(value.query)) {
     fail('INVALID_REQUEST', 'Choose a count or histogram query.');
   }
-  const allowed = ['scope', 'requestId', 'query', 'epsilon', 'maxContributions', 'unitIds', 'context'];
+  const allowed = ['scope', 'requestId', 'query', 'epsilon', 'maxContributions', 'unitIds', 'context', 'syntheticPlan'];
   if (value.query === 'histogram') allowed.push('categories', 'categoryIds');
   if (value.query === 'bounded_sum') allowed.push('values', 'valueUpper');
   if (value.context !== undefined && (typeof value.context !== 'string' || !HEX.test(value.context))) fail('INVALID_REQUEST', 'Invalid public plan fingerprint.');
@@ -89,7 +89,19 @@ function normalizeRequest(input) {
   // statistic is returned from this validation boundary.
   try { callCore({ op: 'validateCentral', request: coreRequest }); }
   catch { fail('INVALID_REQUEST', 'Invalid central data, contribution limit or release budget.'); }
-  return { scope, requestId, charge, categories, coreRequest, context: value.context };
+  let syntheticPlan;
+  if (value.syntheticPlan !== undefined) {
+    try {
+      const plan = callCore({ op: 'planSynthetic', plan: value.syntheticPlan });
+      if (value.query !== 'histogram' || maxContributions !== plan.l1_sensitivity ||
+          categories.length !== plan.measurement_cells || categories.some((name, i) => name !== `cell:${i}`)) throw new Error();
+      syntheticPlan = {
+        schema_version: 1, unit_field: value.syntheticPlan.unit_field, output_rows: plan.output_rows,
+        fields: plan.fields.map(({ name, categories, parent }) => ({ name, categories, parent })),
+      };
+    } catch { fail('INVALID_REQUEST', 'Synthetic plan must match its public measurements and person contribution bound.'); }
+  }
+  return { scope, requestId, charge, categories, coreRequest, context: value.context, syntheticPlan };
 }
 
 function configure(db, create = false) {
@@ -225,6 +237,7 @@ export function listReleases(path, { offset = 0, limit = 20 } = {}) {
         request_id: row.request_id, release_id: result.release_id,
         query: result.report.query, epsilon: decimal(row.charge_units),
         max_contributions: result.report.max_contributions, categories: result.categories,
+        ...(result.synthetic ? { kind: 'synthetic-table' } : {}),
       };
     });
     return deepFreeze({ items, total, offset, has_more: offset + items.length < total });
@@ -239,7 +252,7 @@ export function publishRelease(path, input) {
       const fingerprint = mac(meta, 'request-v1', JSON.stringify({
         mechanism: 'central-geometric24-v1', scope: request.scope,
         categories: request.categories, request: request.coreRequest,
-        context: request.context,
+        context: request.context, syntheticPlan: request.syntheticPlan,
       }));
       const previous = db.prepare('SELECT * FROM releases WHERE request_id = ?').get(request.requestId);
       if (previous) {
@@ -258,6 +271,12 @@ export function publishRelease(path, input) {
           centralHistogram(query.unit_ids, query.category_ids, { ...options, categoryCount: query.category_count });
       } catch { fail('RELEASE_FAILED', 'Protected statistics could not be generated. Retry the same request.'); }
       const result = { schema_version: 1, release_id: randomUUID(), categories: request.categories, report };
+      if (request.syntheticPlan) {
+        // Typed postprocessing receives only public metadata and noisy counts.
+        // Sampling and the protected model are saved in the same transaction.
+        try { result.synthetic = sampleSynthetic(request.syntheticPlan, report.counts); }
+        catch { fail('RELEASE_FAILED', 'Synthetic data could not be generated. Retry the same request.'); }
+      }
       const encoded = JSON.stringify(result);
       const resultMac = mac(meta, 'release-v1', JSON.stringify([request.requestId, request.charge, encoded]));
       db.prepare('INSERT INTO releases VALUES (?, ?, ?, ?, ?)').run(request.requestId, fingerprint, request.charge, encoded, resultMac);

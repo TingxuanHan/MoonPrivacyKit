@@ -6,6 +6,9 @@ pkgtype(kind: "executable")
 
 options(
   link: {
-    "js": { "exports": [ "dispatch", "dispatch_central" ], "format": "esm" },
+    "js": {
+      "exports": [ "dispatch", "dispatch_central", "dispatch_synthetic" ],
+      "format": "esm",
+    },
   },
 )
